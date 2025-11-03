@@ -79,179 +79,59 @@ MedBookings is a POPIA-compliant healthcare booking platform built with Next.js 
 
 ### 🔴 CRITICAL: POPIA Compliance Requirement
 
-All dates/times must use UTC in the database to comply with POPIA healthcare regulations. South Africa timezone is UTC+2 (no DST).
+All dates/times must use UTC in the database. South Africa timezone is UTC+2.
 
-### ❌ FORBIDDEN - These Are BLOCKED by ESLint
+**Quick Reference**:
 
-```typescript
-// ❌ Direct Date usage (BLOCKED)
-const now = new Date();
-const timestamp = Date.now();
+| Need | Use | Example |
+|------|-----|---------|
+| Current time | `nowUTC()` | `if (slot.startTime <= nowUTC())` |
+| Date range queries | `startOfDaySAST()` / `endOfDaySAST()` | `where: { startTime: { gte: startOfDaySAST(date) }}` |
+| Token expiry | `nowUTC()` + date-fns | `addHours(nowUTC(), 24)` |
+| Display to users | `formatSAST()` | `formatSAST(date, 'PPpp')` |
 
-// ❌ Will fail ESLint with: "Use nowUTC() instead of new Date()"
-```
+**ESLint Enforcement**: `new Date()` and `Date.now()` are BLOCKED.
 
-### ✅ REQUIRED - Use Timezone Utilities
-
-**Import from** `/src/lib/timezone.ts`
-
-```typescript
-import { nowUTC, nowSAST, toUTC, fromUTC, formatSAST, startOfDaySAST, endOfDaySAST } from '@/lib/timezone';
-
-// ✅ Current time in UTC
-const now = nowUTC();
-
-// ✅ Current time in SAST (for display)
-const localTime = nowSAST();
-
-// ✅ Convert client date to UTC for storage
-const utcDate = toUTC(clientDate);
-
-// ✅ Convert UTC date for display
-const displayDate = fromUTC(dbDate);
-
-// ✅ Format for South African users
-const formatted = formatSAST(date, {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit'
-});
-
-// ✅ Date range queries (CRITICAL for bookings)
-const start = startOfDaySAST(selectedDate);  // Returns UTC
-const end = endOfDaySAST(selectedDate);      // Returns UTC
-
-const bookings = await prisma.booking.findMany({
-  where: {
-    startTime: { gte: start, lte: end }
-  }
-});
-```
-
-### Common Patterns
-
-#### Token Expiry
-```typescript
-// ❌ WRONG
-const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-// ✅ CORRECT
-import { nowUTC, addMilliseconds } from '@/lib/timezone';
-const expires = addMilliseconds(nowUTC(), 24 * 60 * 60 * 1000);
-```
-
-#### Booking Creation
-```typescript
-// ❌ WRONG
-const booking = await prisma.booking.create({
-  data: {
-    startTime: new Date(userInput.startTime),  // Dangerous!
-    endTime: new Date(userInput.endTime)
-  }
-});
-
-// ✅ CORRECT
-import { toUTC } from '@/lib/timezone';
-const booking = await prisma.booking.create({
-  data: {
-    startTime: toUTC(new Date(userInput.startTime)),
-    endTime: toUTC(new Date(userInput.endTime))
-  }
-});
-```
+📄 **Complete Guide**: See `/docs/compliance/TIMEZONE-GUIDELINES.md` for:
+- Full utility API reference
+- Pattern examples with before/after code
+- Testing strategies for timezone code
+- Debugging timezone issues
 
 ---
 
 ## Type Safety & Organization
 
-### Avoid `any` Types
+**Golden Rules**:
+1. ❌ NO `any` types (except type guards)
+2. ✅ Extract types from `RouterOutputs`, NOT from hooks
+3. ✅ Use Prisma enums: `import { BookingStatus } from '@prisma/client'`
+4. ✅ Validate with Zod: `z.nativeEnum(PrismaEnum)`
 
-**ESLint Rule**: `@typescript-eslint/no-explicit-any` (warn → migrating to error)
-
+**Quick Examples**:
 ```typescript
-// ❌ FORBIDDEN
-const handleData = (data: any) => {
-  return data.someProperty;
-};
-
-// ✅ CORRECT - Extract proper types
+// ✅ CORRECT - Extract tRPC types in component
 import { type RouterOutputs } from '@/utils/api';
 type Provider = RouterOutputs['providers']['getAll'][number];
 
-const handleData = (data: Provider) => {
-  return data.name;  // Type-safe!
-};
-```
-
-### tRPC Type Extraction
-
-**NEVER export types from hooks. ALWAYS extract from RouterOutputs.**
-
-```typescript
-// ❌ FORBIDDEN - Type export from hook
-// File: features/admin/hooks/use-admin-providers.ts
-export type AdminProvider = RouterOutputs['admin']['getProviders'][number];
-export function useAdminProviders() {
-  return api.admin.getProviders.useQuery();
-}
-
-// ✅ CORRECT - No type exports, extract in component
-// File: features/admin/hooks/use-admin-providers.ts
-export function useAdminProviders() {
-  return api.admin.getProviders.useQuery();
-}
-
-// File: features/admin/components/provider-list.tsx
-import { type RouterOutputs } from '@/utils/api';
-type AdminProvider = RouterOutputs['admin']['getProviders'][number];
-
-function ProviderList() {
-  const { data: providers } = useAdminProviders();
-  // providers is type-safe!
-}
-```
-
-### Prisma Enums
-
-**ALWAYS use generated Prisma enums, NEVER create manual enums.**
-
-```typescript
-// ❌ FORBIDDEN - Manual enum
-enum BookingStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED'
-}
-
-// ✅ CORRECT - Use Prisma enum
+// ✅ CORRECT - Prisma enum with Zod
 import { BookingStatus } from '@prisma/client';
-
-// ✅ With Zod validation
-import { z } from 'zod';
-const bookingSchema = z.object({
-  status: z.nativeEnum(BookingStatus)
-});
+const schema = z.object({ status: z.nativeEnum(BookingStatus) });
 ```
 
-### Type File Organization
-
-**Enforced by custom ESLint rules**
-
+**Type File Organization**:
 ```
-feature/
-└── types/
-    ├── types.ts      # Domain types (interfaces, type aliases)
-    ├── schemas.ts    # Zod schemas
-    ├── guards.ts     # Type guards (acceptable `as any` use)
-    └── enums.ts      # Manual enums (rare, prefer Prisma)
+feature/types/
+├── types.ts    # Domain types
+├── schemas.ts  # Zod schemas
+└── guards.ts   # Type guards (acceptable `as any` use)
 ```
 
-**Rules:**
-- ❌ NO `index.ts` files in type directories (barrel exports forbidden)
-- ✅ Direct imports only: `import { User } from '@/features/auth/types/types'`
-- ✅ File headers with JSDoc comments (enforced, warnings for now)
+📄 **Complete Guide**: See `/docs/compliance/TYPE-SAFETY.md` for:
+- Prisma JSON field handling patterns
+- Type guard implementation details
+- tRPC type extraction detailed examples
+- Common type errors and solutions
 
 ---
 
@@ -259,267 +139,76 @@ feature/
 
 ### 🔴 CRITICAL: POPIA Compliance Requirement
 
-Protected Health Information (PHI) must NEVER appear in raw logs. All PHI must be sanitized.
+Protected Health Information (PHI) must NEVER appear in raw logs.
 
-### ❌ FORBIDDEN - These Are BLOCKED by ESLint
+**Quick Reference**:
 
-```typescript
-// ❌ console.log (BLOCKED by ESLint)
-console.log('User email:', user.email);
-console.error('Error for user:', user.name);
+| Use Case | Method | PHI Sanitization |
+|----------|--------|------------------|
+| Debugging | `logger.debug('feature', msg, ctx)` | ALWAYS sanitize |
+| Info | `logger.info(msg, ctx)` | ALWAYS sanitize |
+| Errors | `logger.error(msg, error, ctx)` | ALWAYS sanitize |
+| Compliance | `logger.audit(msg, ctx)` | ALWAYS sanitize |
 
-// ❌ PHI in logs
-logger.info('User logged in', { email: user.email });  // RAW EMAIL!
-```
+**ESLint Enforcement**: `console.log()` is BLOCKED in app code.
 
-### ✅ REQUIRED - Use Logger with PHI Sanitization
-
-**Import from** `/src/lib/logger.ts`
-
+**Sanitization Helpers**:
 ```typescript
 import { logger, sanitizeEmail, sanitizeName, sanitizePhone } from '@/lib/logger';
 
-// ✅ Debug logs (feature-flagged)
-logger.debug('forms', 'Form validation started', { formName: 'registration' });
-
-// ✅ Info logs (development only)
 logger.info('User logged in', {
   email: sanitizeEmail(user.email),  // "jo***@example.com"
   name: sanitizeName(user.name)      // "Jo** Do*"
 });
-
-// ✅ Warnings
-logger.warn('Rate limit approaching', {
-  userId: sanitizeUserId(user.id),
-  requestCount: 95
-});
-
-// ✅ Errors
-logger.error('Database query failed', error, {
-  operation: 'findProvider',
-  providerId: sanitizeProviderId(id)
-});
-
-// ✅ Audit logs (ALWAYS logged for compliance)
-logger.audit('Provider approved', {
-  adminId: sanitizeUserId(ctx.session.user.id),
-  providerId: sanitizeProviderId(provider.id),
-  action: 'APPROVE_PROVIDER'
-});
 ```
 
-### PHI Sanitization Functions
+**Feature Debug Flags**: Set `DEBUG_FORMS`, `DEBUG_MAPS`, `DEBUG_ADMIN`, etc. in env to enable selective logging.
 
-```typescript
-sanitizeEmail(email)     // "john@example.com" → "jo***@example.com"
-sanitizePhone(phone)     // "+27821234567" → "+2782***4567"
-sanitizeName(name)       // "John Doe" → "Jo** Do*"
-sanitizeToken(token)     // "abc123...xyz789" → "abc123def4..."
-sanitizeUserId(id)       // "cuid123" → "[USER:cuid123]"
-sanitizeContext(obj)     // Auto-sanitizes all PHI fields in object
-```
-
-### Feature Debug Flags
-
-**Enable selective debug logging** via environment variables:
-
-```env
-DEBUG_ALL=true              # Enable all debug logs
-DEBUG_FORMS=true            # Form validation
-DEBUG_MAPS=true             # Google Maps
-DEBUG_ADMIN=true            # Admin operations
-DEBUG_CALENDAR=true         # Calendar operations
-DEBUG_BOOKINGS=true         # Booking operations
-```
-
-Usage:
-```typescript
-logger.debug('forms', 'Form submitted', { values: sanitizedData });
-// Only logs if DEBUG_FORMS=true or DEBUG_ALL=true
-```
-
-### Audit Logging for Compliance
-
-**REQUIRED for sensitive operations:**
-
-```typescript
-import { createAuditLog } from '@/lib/audit';
-import { getIpFromRequest, getUserAgentFromRequest } from '@/lib/audit';
-
-await createAuditLog({
-  action: 'Provider approved',
-  category: 'ADMIN_ACTION',
-  userId: ctx.session.user.id,
-  userEmail: sanitizeEmail(ctx.session.user.email),
-  resource: 'Provider',
-  resourceId: sanitizeProviderId(provider.id),
-  ipAddress: getIpFromRequest(req),
-  userAgent: getUserAgentFromRequest(req),
-  metadata: {
-    previousStatus: provider.status,
-    newStatus: 'APPROVED'
-  }
-});
-```
-
-**Audit Categories:**
-- `AUTHENTICATION` - Login attempts, sessions
-- `AUTHORIZATION` - Access control decisions
-- `PHI_ACCESS` - Viewing/accessing PHI data
-- `ADMIN_ACTION` - Admin operations
-- `DATA_MODIFICATION` - Create/update/delete
-- `SECURITY` - Security events
-- `GENERAL` - Other audit-worthy events
+📄 **Complete Guide**: See `/docs/compliance/LOGGING.md` for:
+- Console usage policy (CLI vs app code)
+- Logger API complete reference
+- Feature debug flag system (DEBUG_FORMS, DEBUG_MAPS, etc.)
+- PHI sanitization functions reference
+- Audit logging for compliance (POPIA Section 22)
 
 ---
 
 ## Database Operations
 
-### Transactions for Multi-Table Operations
+**CRITICAL Rules**:
 
-**REQUIRED for data integrity and preventing race conditions.**
+| Rule | Pattern | ESLint |
+|------|---------|--------|
+| Pagination | ALWAYS use `take:` (min 20) | Pre-commit hook validates |
+| Multi-table ops | ALWAYS use `prisma.$transaction()` | Required for bookings |
+| N+1 queries | ALWAYS use `include` or batch queries | Code review check |
+| DB access | ONLY in tRPC procedures | Architecture boundary |
 
+**Quick Examples**:
 ```typescript
-// ❌ FORBIDDEN - No transaction (race condition!)
-const slot = await prisma.calculatedAvailabilitySlot.findUnique({ where: { id } });
-if (slot.status !== 'AVAILABLE') throw new Error('Slot unavailable');
+// ✅ Pagination
+await prisma.provider.findMany({ take: 50 });
 
-await prisma.booking.create({ data: { slotId: id, ...bookingData } });
-await prisma.calculatedAvailabilitySlot.update({
-  where: { id },
-  data: { status: 'BOOKED' }
-});
-
-// ✅ CORRECT - Use transaction with timeouts
+// ✅ Transaction
 await prisma.$transaction(async (tx) => {
-  // 1. Lock the slot
-  const slot = await tx.calculatedAvailabilitySlot.findUnique({
-    where: { id: slotId }
-  });
+  const slot = await tx.slot.findUnique({ where: { id } });
+  if (!slot || slot.status !== 'AVAILABLE') throw new Error('Unavailable');
+  await tx.booking.create(...);
+  await tx.slot.update({ where: { id }, data: { status: 'BOOKED' } });
+}, { maxWait: 10000, timeout: 20000 });
 
-  // 2. Verify availability
-  if (!slot || slot.status !== 'AVAILABLE') {
-    throw new Error('Slot unavailable');
-  }
-
-  // 3. Create booking
-  const booking = await tx.booking.create({
-    data: { slotId: id, ...bookingData }
-  });
-
-  // 4. Update slot
-  await tx.calculatedAvailabilitySlot.update({
-    where: { id },
-    data: { status: 'BOOKED' }
-  });
-
-  return booking;
-}, {
-  maxWait: 10000,   // Max time to wait for transaction to start
-  timeout: 20000    // Max time for transaction to complete
-});
-```
-
-### Pagination - REQUIRED for All Queries
-
-**ESLint Warning**: Pre-commit hook validates pagination
-
-```typescript
-// ❌ FORBIDDEN - Unbounded query
-const providers = await prisma.provider.findMany({
-  where: { status: 'APPROVED' }
-});
-
-// ✅ CORRECT - Always use take: and skip:
-const providers = await prisma.provider.findMany({
-  where: { status: 'APPROVED' },
-  take: 50,                    // REQUIRED
-  skip: offset,
-  orderBy: { createdAt: 'desc' }
-});
-
-// ✅ Better - Use pagination helper
-import { createPagination } from '@/lib/pagination';
-
-const { take, skip } = createPagination({ page: 1, pageSize: 50 });
-const providers = await prisma.provider.findMany({
-  where: { status: 'APPROVED' },
-  take,
-  skip,
-  orderBy: { createdAt: 'desc' }
-});
-```
-
-### Prevent N+1 Queries
-
-```typescript
-// ❌ FORBIDDEN - N+1 query
-const users = await prisma.user.findMany();
-for (const user of users) {
-  const bookings = await prisma.booking.findMany({
-    where: { clientId: user.id }
-  });
-  // Process bookings...
-}
-
-// ✅ CORRECT - Use eager loading with include
-const users = await prisma.user.findMany({
-  include: {
-    bookingsAsClient: {
-      where: { status: 'CONFIRMED' },
-      take: 10
-    }
-  },
+// ✅ Prevent N+1
+await prisma.user.findMany({
+  include: { bookings: { take: 10 } },
   take: 50
 });
-
-// ✅ Alternative - Single query with join
-const bookings = await prisma.booking.findMany({
-  where: { clientId: { in: userIds } },
-  include: { client: true },
-  take: 500
-});
 ```
 
-### Database Access Rules
-
-**CRITICAL architectural boundary:**
-
-```typescript
-// ❌ FORBIDDEN - Prisma in client components
-'use client';
-import { prisma } from '@/lib/prisma';  // ERROR!
-
-// ❌ FORBIDDEN - Prisma in custom hooks
-export function useProviders() {
-  return useQuery(() => prisma.provider.findMany());  // ERROR!
-}
-
-// ❌ FORBIDDEN - Returning DB results from server actions
-export async function createProvider(data) {
-  return await prisma.provider.create({ data });  // ERROR!
-}
-
-// ✅ CORRECT - Prisma ONLY in tRPC procedures
-export const providersRouter = createTRPCRouter({
-  getAll: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.provider.findMany({  // ✅ ONLY place!
-      take: 50
-    });
-  })
-});
-
-// ✅ CORRECT - Client uses tRPC hook
-export function useProviders() {
-  return api.providers.getAll.useQuery();
-}
-
-// ✅ CORRECT - Server action returns metadata only
-export async function createProvider(data) {
-  await sendEmail(data.email);
-  return { success: true, providerId: data.id };
-}
-```
+📄 **Complete Guide**: See `/docs/core/DATABASE-OPERATIONS.md` for:
+- Connection pooling configuration
+- Query optimization patterns
+- Common operations (create, update, delete, batch)
+- Performance troubleshooting
 
 ---
 
@@ -863,63 +552,18 @@ export const serverEnv = z.object({
 
 ## Performance Standards
 
-### Database Performance
+**Quick Reference**:
 
-```typescript
-// ✅ Pagination for lists > 20 items
-const providers = await prisma.provider.findMany({ take: 50 });
+| Category | Rule | Example |
+|----------|------|---------|
+| Database | Pagination (take: 50+) | `await prisma.provider.findMany({ take: 50 })` |
+| Database | No N+1 queries | Use `include` for relations |
+| Frontend | Memoize expensive ops | `useMemo()`, `useCallback()` |
+| Frontend | Image optimization | Use `next/image` |
+| API | Cache GET requests (5s min) | `staleTime: 5000` |
+| API | No loops with API calls | Batch fetch instead |
 
-// ✅ No N+1 queries - use eager loading
-const bookings = await prisma.booking.findMany({
-  include: { client: true, slot: true },
-  take: 100
-});
-
-// ✅ Indexes on queried columns (in schema.prisma)
-model Provider {
-  email String @unique
-  status ProviderStatus
-
-  @@index([status])
-  @@index([email])
-}
-```
-
-### Frontend Performance
-
-```typescript
-// ✅ Memoization for expensive computations
-const expensiveValue = useMemo(() => computeExpensive(data), [data]);
-
-// ✅ Callback memoization
-const handleClick = useCallback(() => { ... }, [deps]);
-
-// ✅ Component memoization
-export const ExpensiveComponent = memo(({ data }) => { ... });
-
-// ✅ Debounce user input
-const debouncedSearch = useDebouncedValue(searchTerm, 300);
-```
-
-### API Performance
-
-```typescript
-// ✅ Cache GET requests (minimum 5 seconds)
-export function useProviders() {
-  return api.providers.getAll.useQuery(undefined, {
-    staleTime: 5000,      // Consider data fresh for 5 seconds
-    cacheTime: 300000     // Keep in cache for 5 minutes
-  });
-}
-
-// ❌ No API calls in loops
-for (const id of ids) {
-  const provider = await api.providers.getById.query({ id });  // BAD
-}
-
-// ✅ Batch fetch instead
-const providers = await api.providers.getByIds.query({ ids });
-```
+📄 **Database Performance**: See `/docs/core/DATABASE-OPERATIONS.md` for query optimization patterns and troubleshooting
 
 ---
 

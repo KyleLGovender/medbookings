@@ -1,9 +1,9 @@
 {
-  "claudeMdHash": "30cdb65a93579e839e09fa2d87fca5267cfb87636bd46530eaa9d1818d7324ec",
-  "lastSync": "2025-11-03T08:52:15.831Z",
+  "claudeMdHash": "2c2cd6d02cad717de05c8836e621abbd9d22de73d996d61b3950094084832c82",
+  "lastSync": "2025-11-03T09:16:23.583Z",
   "validatorConfig": {
     "version": "1.0.0",
-    "lastUpdated": "2025-11-03T08:52:15.830Z",
+    "lastUpdated": "2025-11-03T09:16:23.582Z",
     "rules": {
       "timezone": {
         "enabled": true,
@@ -133,22 +133,23 @@
       "core/CLAUDE-AGENT-CONTEXT.md",
       "compliance/CONTEXT-LOADING.md",
       "compliance/TYPE-SAFETY.md",
+      "core/DATABASE-OPERATIONS.md",
       "compliance/VERIFICATION-PROTOCOLS.md",
       "compliance/TIMEZONE-GUIDELINES.md",
       "compliance/LOGGING.md",
       "compliance/BUG-DETECTION.md",
+      "guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md",
       "compliance/DEVELOPMENT-WORKFLOW.md",
+      "core/TODO-TRACKING.md",
       "compliance/COMPLIANCE-SYSTEM.md",
       "compliance/CLAUDE-MD-AUTO-SYNC.md",
+      "compliance/ENFORCEMENT-COVERAGE.md",
+      "guides/DOCS-VALIDATION-GUIDE.md",
       "compliance/SECURITY-CHECKLIST.md",
       "deployment/VERCEL-DEPLOYMENT.md",
       "deployment/UPSTASH-REDIS-SETUP.md"
     ],
-    "orphanedDocs": [
-      "compliance/ENFORCEMENT-COVERAGE.md",
-      "guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md",
-      "guides/DOCS-VALIDATION-GUIDE.md"
-    ],
-    "lastValidated": "2025-11-03T08:52:15.831Z"
+    "orphanedDocs": [],
+    "lastValidated": "2025-11-03T09:16:23.583Z"
   }
 }

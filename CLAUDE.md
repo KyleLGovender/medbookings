@@ -303,6 +303,12 @@
     timeout: 20000
   });
 
+  📄 **Database Operations Guide**: See `/docs/core/DATABASE-OPERATIONS.md` for:
+  - Query patterns (pagination, relations, N+1 prevention)
+  - Transaction best practices and race condition prevention
+  - Performance optimization strategies
+  - Common operations with code examples
+
   API Pattern (tRPC):
   // REQUIRED STRUCTURE - NEVER DEVIATE
   export const featureRouter = createTRPCRouter({
@@ -573,6 +579,12 @@
 
   📄 **Bug Detection Reference**: See `/docs/compliance/BUG-DETECTION.md` for complete debugging protocol and red flag priorities.
 
+  📄 **Actionable Warnings Implementation**: See `/docs/guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md` for:
+  - Enhanced warning system implementation plan
+  - Architecture (components: WarningContext, useActionableWarning, WarningPanel)
+  - Implementation phases (6 phases, current status)
+  - Success metrics and rollout plan
+
   React Issues
 
   // Memory Leak Pattern - DETECT & FIX
@@ -628,6 +640,12 @@
   🔄 SECTION 12: DEVELOPMENT WORKFLOW
 
   📄 **Complete Workflow Guide**: See `/docs/compliance/DEVELOPMENT-WORKFLOW.md` for detailed task execution flow, development standards, and command execution policy.
+
+  📄 **TODO Tracking**: See `/docs/core/TODO-TRACKING.md` for:
+  - Current TODO/FIXME items organized by priority
+  - High priority tasks (4 items): logo upload, calendar import/export, org calendar view, error monitoring
+  - Low priority tasks (13 items): email notifications across features
+  - Implementation notes with file locations
 
   Task Execution Flow
 
@@ -718,6 +736,18 @@
   - Extending the compliance system with new rules
 
   📄 **Auto-Sync System**: See `/docs/compliance/CLAUDE-MD-AUTO-SYNC.md` for how CLAUDE.md changes automatically sync with compliance rules using SHA-256 hash detection.
+
+  📄 **Enforcement Coverage**: See `/docs/compliance/ENFORCEMENT-COVERAGE.md` for:
+  - Complete inventory of 22 active enforcement mechanisms
+  - ESLint rules (7), commit-gate validators (13), native ESLint rules (2)
+  - Coverage table by category (100% for critical areas)
+  - Current automation level (85%)
+
+  📄 **Documentation Validation**: See `/docs/guides/DOCS-VALIDATION-GUIDE.md` for:
+  - CLAUDE.md ↔ /docs/ alignment validation process
+  - Reference format standards
+  - Adding new documentation (4-step process)
+  - Troubleshooting orphaned docs and missing references
 
   MCP Tool Usage
 
