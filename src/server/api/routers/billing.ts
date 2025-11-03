@@ -1,4 +1,5 @@
 import { Prisma, SubscriptionType } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import {
@@ -63,9 +64,17 @@ export const billingRouter = createTRPCRouter({
         where: { id: input.id },
         include: {
           plan: true,
-          organization: true,
+          organization: {
+            include: {
+              memberships: {
+                where: { userId: ctx.session.user.id },
+              },
+            },
+          },
           location: true,
-          provider: true,
+          provider: {
+            select: { userId: true },
+          },
           payments: {
             orderBy: { createdAt: 'desc' },
             take: 10,
@@ -79,6 +88,21 @@ export const billingRouter = createTRPCRouter({
 
       if (!subscription) {
         throw new Error('Subscription not found');
+      }
+
+      // ✅ AUTHORIZATION CHECK: Verify ownership (IDOR vulnerability fix)
+      // Subscription can belong to provider or organization
+      const isOwner =
+        subscription.provider?.userId === ctx.session.user.id || // User is the provider
+        (subscription.organization?.memberships.length ?? 0) > 0; // User is member of organization
+
+      const isAdmin = ctx.session.user.role === 'ADMIN' || ctx.session.user.role === 'SUPER_ADMIN';
+
+      if (!isOwner && !isAdmin) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Not authorized to view this subscription',
+        });
       }
 
       return subscription;

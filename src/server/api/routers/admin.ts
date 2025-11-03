@@ -12,6 +12,7 @@ import {
   rejectRequirementRequestSchema,
 } from '@/features/admin/types/schemas';
 import { validateProviderRequirementsBusinessLogic } from '@/features/providers/lib/actions';
+import { createAuditLog } from '@/lib/audit';
 import { logger, sanitizeEmail } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 import { adminProcedure, createTRPCRouter } from '@/server/trpc';
@@ -312,6 +313,24 @@ export const adminRouter = createTRPCRouter({
         },
       });
 
+      // Create database audit log (POPIA compliance)
+      await createAuditLog({
+        action: 'Provider approved',
+        category: 'ADMIN_ACTION',
+        userId: ctx.session.user.id,
+        userEmail: sanitizeEmail(ctx.session.user.email || ''),
+        resource: 'Provider',
+        resourceId: updatedProvider.id,
+        metadata: {
+          providerName: updatedProvider.name,
+          providerEmail: sanitizeEmail(updatedProvider.email || ''),
+          requirementsValidation: {
+            totalRequired: validationResult.totalRequired,
+            totalApproved: validationResult.totalApproved,
+          },
+        },
+      });
+
       // Send approval notification email
       if (updatedProvider.user?.email || updatedProvider.email) {
         try {
@@ -429,6 +448,21 @@ export const adminRouter = createTRPCRouter({
         },
       });
 
+      // Create database audit log (POPIA compliance)
+      await createAuditLog({
+        action: 'Provider rejected',
+        category: 'ADMIN_ACTION',
+        userId: ctx.session.user.id,
+        userEmail: sanitizeEmail(ctx.session.user.email || ''),
+        resource: 'Provider',
+        resourceId: provider.id,
+        metadata: {
+          providerName: provider.name,
+          providerEmail: sanitizeEmail(provider.email || ''),
+          rejectionReason: input.reason,
+        },
+      });
+
       // Log admin action
       logger.audit('ADMIN_ACTION: Provider rejected', {
         providerId: provider.id,
@@ -541,6 +575,21 @@ export const adminRouter = createTRPCRouter({
         },
       });
 
+      // Create database audit log (POPIA compliance)
+      await createAuditLog({
+        action: 'Requirement approved',
+        category: 'ADMIN_ACTION',
+        userId: ctx.session.user.id,
+        userEmail: sanitizeEmail(ctx.session.user.email || ''),
+        resource: 'RequirementSubmission',
+        resourceId: submission.id,
+        metadata: {
+          requirementName: submission.requirementType.name,
+          providerId: submission.provider.id,
+          providerName: submission.provider.name,
+        },
+      });
+
       // Log admin action
       logger.audit('ADMIN_ACTION: Requirement approved', {
         requirementId: submission.id,
@@ -591,6 +640,22 @@ export const adminRouter = createTRPCRouter({
         data: {
           status: 'REJECTED',
           notes: input.reason,
+        },
+      });
+
+      // Create database audit log (POPIA compliance)
+      await createAuditLog({
+        action: 'Requirement rejected',
+        category: 'ADMIN_ACTION',
+        userId: ctx.session.user.id,
+        userEmail: sanitizeEmail(ctx.session.user.email || ''),
+        resource: 'RequirementSubmission',
+        resourceId: submission.id,
+        metadata: {
+          requirementName: submission.requirementType.name,
+          providerId: submission.provider.id,
+          providerName: submission.provider.name,
+          rejectionReason: input.reason,
         },
       });
 
@@ -721,6 +786,19 @@ export const adminRouter = createTRPCRouter({
         },
       });
 
+      // Create database audit log (POPIA compliance)
+      await createAuditLog({
+        action: 'Organization approved',
+        category: 'ADMIN_ACTION',
+        userId: ctx.session.user.id,
+        userEmail: sanitizeEmail(ctx.session.user.email || ''),
+        resource: 'Organization',
+        resourceId: organization.id,
+        metadata: {
+          organizationName: organization.name,
+        },
+      });
+
       // Log admin action
       logger.audit('ADMIN_ACTION: Organization approved', {
         organizationId: organization.id,
@@ -758,6 +836,20 @@ export const adminRouter = createTRPCRouter({
           rejectionReason: input.reason,
           approvedAt: null,
           approvedById: null,
+        },
+      });
+
+      // Create database audit log (POPIA compliance)
+      await createAuditLog({
+        action: 'Organization rejected',
+        category: 'ADMIN_ACTION',
+        userId: ctx.session.user.id,
+        userEmail: sanitizeEmail(ctx.session.user.email || ''),
+        resource: 'Organization',
+        resourceId: organization.id,
+        metadata: {
+          organizationName: organization.name,
+          rejectionReason: input.reason,
         },
       });
 

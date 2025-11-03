@@ -1,8 +1,9 @@
-import { type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 
 import { logger } from '@/lib/logger';
+import { apiRateLimit, createRateLimitHeaders, getRateLimitIdentifier } from '@/lib/rate-limit';
 import { appRouter } from '@/server/api/root';
 import { createTRPCContext } from '@/server/trpc';
 
@@ -23,8 +24,37 @@ const createContext = async (_req: NextRequest) => {
   } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 };
 
-const handler = (req: NextRequest) =>
-  fetchRequestHandler({
+const handler = async (req: NextRequest) => {
+  // Apply rate limiting to all tRPC requests
+  // Uses IP address for anonymous requests, user ID for authenticated users
+  const identifier = getRateLimitIdentifier(req);
+  const rateLimitResult = await apiRateLimit.limit(identifier);
+
+  // If rate limit exceeded, return 429 Too Many Requests
+  if (!rateLimitResult.success) {
+    logger.warn('Rate limit exceeded for tRPC request', {
+      identifier,
+      path: req.nextUrl.pathname,
+      remaining: rateLimitResult.remaining,
+      resetTimestamp: rateLimitResult.reset,
+    });
+
+    return NextResponse.json(
+      {
+        error: {
+          code: 'TOO_MANY_REQUESTS',
+          message: 'Too many requests. Please try again later.',
+        },
+      },
+      {
+        status: 429,
+        headers: createRateLimitHeaders(rateLimitResult),
+      }
+    );
+  }
+
+  // Rate limit passed - proceed with tRPC request
+  return fetchRequestHandler({
     endpoint: '/api/trpc',
     req,
     router: appRouter,
@@ -39,5 +69,6 @@ const handler = (req: NextRequest) =>
           }
         : undefined,
   });
+};
 
 export { handler as GET, handler as POST };

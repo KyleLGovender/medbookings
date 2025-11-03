@@ -89,7 +89,7 @@ export const calendarRouter = createTRPCRouter({
               select: {
                 id: true,
                 name: true,
-                email: true,
+                // email: true, // ❌ REMOVED: PHI not exposed in public endpoints (IDOR vulnerability fix)
                 image: true,
               },
             },

@@ -296,7 +296,6 @@ export function ProviderCalendarView({
                 <UserAvatar
                   name={provider.user?.name}
                   image={provider.user?.image}
-                  email={provider.user?.email}
                   className="h-12 w-12"
                 />
                 <div>

@@ -348,23 +348,32 @@ export function GoogleMapsLocationPicker({
     if (existingScript) {
       logger.debug('maps', 'Google Maps script already exists, waiting for load');
       // Wait for it to load
-      const checkLoaded = setInterval(() => {
+      let checkLoaded: NodeJS.Timeout | null = null;
+      let timeoutId: NodeJS.Timeout | null = null;
+
+      checkLoaded = setInterval(() => {
         if (window.google && window.google.maps) {
-          clearInterval(checkLoaded);
+          if (checkLoaded) clearInterval(checkLoaded);
+          if (timeoutId) clearTimeout(timeoutId);
           logger.debug('maps', 'Google Maps loaded from existing script');
           initializeMap();
         }
       }, 100);
 
       // Timeout after 15 seconds
-      setTimeout(() => {
-        clearInterval(checkLoaded);
+      timeoutId = setTimeout(() => {
+        if (checkLoaded) clearInterval(checkLoaded);
         if (!window.google || !window.google.maps) {
           setError('Google Maps failed to load (timeout)');
           setIsLoading(false);
         }
       }, 15000);
-      return;
+
+      // ✅ Cleanup function to prevent memory leak
+      return () => {
+        if (checkLoaded) clearInterval(checkLoaded);
+        if (timeoutId) clearTimeout(timeoutId);
+      };
     }
 
     logger.debug('maps', 'Loading Google Maps API');

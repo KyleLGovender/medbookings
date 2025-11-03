@@ -3,22 +3,33 @@ import { ZodError, z } from 'zod';
 
 const env = createEnv({
   server: {
+    // REQUIRED - Core application
     NODE_ENV: z.enum(['development', 'production', 'test']),
     DATABASE_URL: z.string().url(),
-    GOOGLE_CLIENT_ID: z.string(),
-    GOOGLE_CLIENT_SECRET: z.string(),
-    NEXTAUTH_SECRET: z.string(),
+    NEXTAUTH_SECRET: z.string().min(32, 'NEXTAUTH_SECRET must be at least 32 characters'),
     NEXTAUTH_URL: z.string().url(),
-    // Vercel Blob Configuration
-    BLOB_READ_WRITE_TOKEN: z.string(),
-    // Twilio Configuration
-    TWILIO_ACCOUNT_SID: z.string(),
-    TWILIO_AUTH_TOKEN: z.string(),
-    TWILIO_PHONE_NUMBER: z.string(),
-    TWILIO_WHATSAPP_NUMBER: z.string(),
-    // SendGrid Configuration
-    SENDGRID_API_KEY: z.string(),
-    SENDGRID_FROM_EMAIL: z.string(),
+
+    // OPTIONAL - OAuth providers (can disable if using credentials only)
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+    // OPTIONAL - File storage (gracefully degrades if not configured)
+    BLOB_READ_WRITE_TOKEN: z.string().optional(),
+
+    // OPTIONAL - SMS/WhatsApp (gracefully degrades if not configured)
+    TWILIO_ACCOUNT_SID: z.string().optional(),
+    TWILIO_AUTH_TOKEN: z.string().optional(),
+    TWILIO_PHONE_NUMBER: z.string().optional(),
+    TWILIO_WHATSAPP_NUMBER: z.string().optional(),
+
+    // OPTIONAL - Email service (gracefully degrades if not configured)
+    SENDGRID_API_KEY: z.string().optional(),
+    SENDGRID_FROM_EMAIL: z.string().email().optional(),
+
+    // OPTIONAL - Rate limiting (uses in-memory fallback in development)
+    // NOTE: HIGHLY RECOMMENDED for production to prevent multi-instance issues
+    UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   },
   emptyStringAsUndefined: true,
   // eslint-disable-next-line n/no-process-env

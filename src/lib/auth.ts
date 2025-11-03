@@ -49,6 +49,8 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: 'jwt', // Make sure this is set
+    maxAge: 30 * 60, // 30 minutes (POPIA requirement - Section 19)
+    updateAge: 5 * 60, // Refresh token every 5 minutes to keep active sessions alive
   },
   pages: {
     signIn: '/login',

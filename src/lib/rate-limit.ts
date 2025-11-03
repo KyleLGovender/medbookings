@@ -20,7 +20,7 @@ import { nowUTC } from '@/lib/timezone';
 let redis: Redis | undefined;
 
 try {
-  // Only initialize if env vars are present (production)
+  // Only initialize if env vars are present
   if (process.env['UPSTASH_REDIS_REST_URL'] && process.env['UPSTASH_REDIS_REST_TOKEN']) {
     redis = new Redis({
       url: process.env['UPSTASH_REDIS_REST_URL'],
@@ -29,6 +29,13 @@ try {
   }
 } catch (error) {
   logger.warn('Failed to initialize Upstash Redis, using in-memory rate limiting', { error });
+}
+
+// ✅ Warn if Redis is not configured in production (checked at module load time)
+if (!redis && process.env.NODE_ENV === 'production' && !process.env.NEXT_PHASE) {
+  logger.error(
+    'CRITICAL: UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required in production for proper rate limiting across multiple instances'
+  );
 }
 
 /**
@@ -120,6 +127,25 @@ function createInMemoryRateLimit(
   maxAttempts: number,
   windowMs: number
 ): { limit: (identifier: string) => Promise<RateLimitResult> } {
+  // ✅ FAIL CLOSED: Refuse to work in production without Redis
+  if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PHASE) {
+    logger.error(
+      'PRODUCTION RATE LIMIT FAILURE: In-memory rate limiting is not safe for production'
+    );
+    return {
+      limit: async () => {
+        // Always fail in production without Redis to prevent bypass
+        return {
+          success: false,
+          limit: 0,
+          remaining: 0,
+          reset: nowUTC().getTime(),
+          pending: Promise.resolve(),
+        };
+      },
+    };
+  }
+
   const attempts = new Map<string, InMemoryRecord>();
 
   // Cleanup old records every 5 minutes

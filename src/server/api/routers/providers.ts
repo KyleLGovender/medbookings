@@ -61,14 +61,7 @@ export const providersRouter = createTRPCRouter({
             service: true,
           },
         },
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            image: true,
-          },
-        },
+        user: true,
         typeAssignments: {
           include: {
             providerType: {
@@ -92,6 +85,31 @@ export const providersRouter = createTRPCRouter({
       throw new Error('Provider not found');
     }
 
+    // ✅ AUTHORIZATION: Remove PHI for non-owners (IDOR vulnerability fix)
+    const isOwner = ctx.session?.user.id === provider.userId;
+    const isAdmin = ctx.session?.user.role === 'ADMIN' || ctx.session?.user.role === 'SUPER_ADMIN';
+
+    if (!isOwner && !isAdmin) {
+      // Remove PHI from public view
+      return {
+        ...provider,
+        user: {
+          id: provider.user.id,
+          name: provider.user.name,
+          image: provider.user.image,
+          email: null,
+          phone: null,
+          role: provider.user.role,
+          emailVerified: provider.user.emailVerified,
+          createdAt: provider.user.createdAt,
+          updatedAt: provider.user.updatedAt,
+          password: null,
+          passwordMigratedAt: null,
+        },
+        requirementSubmissions: [], // Hide verification documents from public
+      };
+    }
+
     return provider;
   }),
 
@@ -106,15 +124,7 @@ export const providersRouter = createTRPCRouter({
         where: { userId: input.userId },
         include: {
           services: true,
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              image: true,
-              phone: true,
-            },
-          },
+          user: true,
           typeAssignments: {
             include: {
               providerType: {
@@ -135,6 +145,32 @@ export const providersRouter = createTRPCRouter({
 
       if (!provider) {
         return null;
+      }
+
+      // ✅ AUTHORIZATION: Remove PHI for non-owners (IDOR vulnerability fix)
+      const isOwner = ctx.session?.user.id === provider.userId;
+      const isAdmin =
+        ctx.session?.user.role === 'ADMIN' || ctx.session?.user.role === 'SUPER_ADMIN';
+
+      if (!isOwner && !isAdmin) {
+        // Remove PHI from public view
+        return {
+          ...provider,
+          user: {
+            id: provider.user.id,
+            name: provider.user.name,
+            image: provider.user.image,
+            email: null,
+            phone: null,
+            role: provider.user.role,
+            emailVerified: provider.user.emailVerified,
+            createdAt: provider.user.createdAt,
+            updatedAt: provider.user.updatedAt,
+            password: null,
+            passwordMigratedAt: null,
+          },
+          requirementSubmissions: [], // Hide verification documents from public
+        };
       }
 
       return provider;
