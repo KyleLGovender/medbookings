@@ -162,7 +162,7 @@ CLAUDE.md now references these extracted docs for verbose details:
 | **Type Safety** | Type system architecture, Prisma JSON fields | 530+ lines | `/docs/compliance/TYPE-SAFETY.md` |
 | **Timezone Guidelines** | UTC storage, SAST display, utilities | 450+ lines | `/docs/compliance/TIMEZONE-GUIDELINES.md` |
 | **Logging** | Logger API, PHI sanitization, POPIA compliance | 925+ lines | `/docs/compliance/LOGGING.md` |
-| **Deployment** | Production requirements, pre-deployment checklist | 416+ lines | `/docs/compliance/DEPLOYMENT.md` |
+| **Security Checklist** | POPIA compliance, security verification, incident response | 750+ lines | `/docs/compliance/SECURITY-CHECKLIST.md` |
 | **Enforcement** | Three-layer compliance system, rule documentation | 500+ lines | `/docs/compliance/COMPLIANCE-SYSTEM.md` |
 | **Verification Protocols** | Route validation, data source checks, build protocol | 150+ lines | `/docs/compliance/VERIFICATION-PROTOCOLS.md` |
 | **Bug Detection** | React issues, database issues, debugging protocol | 200+ lines | `/docs/compliance/BUG-DETECTION.md` |

@@ -1,9 +1,9 @@
 {
-  "claudeMdHash": "7b42c1e2c80c3f596c634086e9db7840cec4d68330c0a294b8c01deb6fc20b4c",
-  "lastSync": "2025-11-02T19:26:25.041Z",
+  "claudeMdHash": "30cdb65a93579e839e09fa2d87fca5267cfb87636bd46530eaa9d1818d7324ec",
+  "lastSync": "2025-11-03T08:52:15.831Z",
   "validatorConfig": {
     "version": "1.0.0",
-    "lastUpdated": "2025-11-02T19:26:25.040Z",
+    "lastUpdated": "2025-11-03T08:52:15.830Z",
     "rules": {
       "timezone": {
         "enabled": true,
@@ -129,6 +129,8 @@
   "docsAlignment": {
     "referencedDocs": [
       "guides/DEVELOPER-PRINCIPLES.md",
+      "core/CLAUDE-AGENT-CONTEXT.md",
+      "core/CLAUDE-AGENT-CONTEXT.md",
       "compliance/CONTEXT-LOADING.md",
       "compliance/TYPE-SAFETY.md",
       "compliance/VERIFICATION-PROTOCOLS.md",
@@ -138,12 +140,15 @@
       "compliance/DEVELOPMENT-WORKFLOW.md",
       "compliance/COMPLIANCE-SYSTEM.md",
       "compliance/CLAUDE-MD-AUTO-SYNC.md",
-      "compliance/DEPLOYMENT.md"
+      "compliance/SECURITY-CHECKLIST.md",
+      "deployment/VERCEL-DEPLOYMENT.md",
+      "deployment/UPSTASH-REDIS-SETUP.md"
     ],
     "orphanedDocs": [
+      "compliance/ENFORCEMENT-COVERAGE.md",
       "guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md",
       "guides/DOCS-VALIDATION-GUIDE.md"
     ],
-    "lastValidated": "2025-11-02T19:26:25.041Z"
+    "lastValidated": "2025-11-03T08:52:15.831Z"
   }
 }

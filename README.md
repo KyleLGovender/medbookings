@@ -269,7 +269,8 @@ For detailed deployment guide, see [VERCEL-DEPLOYMENT.md](./docs/deployment/VERC
 - Configure custom domain in Vercel Dashboard
 - Enable automatic SSL certificates (Vercel handles this)
 - Set up Google OAuth callback URL: `https://your-domain.com/api/auth/callback/google`
-- Configure rate limiting with Upstash Redis (see [DEPLOYMENT.md](./docs/compliance/DEPLOYMENT.md))
+- Configure rate limiting with Upstash Redis (see [UPSTASH-REDIS-SETUP.md](./docs/deployment/UPSTASH-REDIS-SETUP.md))
+- Review security checklist (see [SECURITY-CHECKLIST.md](./docs/compliance/SECURITY-CHECKLIST.md))
 
 //Testing changes to Branch vs Master.
 Changed by Shei 20250416 16:59

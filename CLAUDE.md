@@ -69,7 +69,7 @@
   ```
 
   **STEP 2 - IF CACHE EXISTS**:
-  1. Read `/docs/claude-agent-context/CLAUDE-AGENT-CONTEXT.md` (~7k tokens)
+  1. Read `/docs/core/CLAUDE-AGENT-CONTEXT.md` (~7k tokens)
   2. Check "Last Updated" timestamp in the file header
   3. Check "Recent Changes Log" section for latest changes
   4. If cache is recent (< 2 weeks old):
@@ -82,7 +82,7 @@
 
   **STEP 3 - IF CACHE MISSING** or **USER EXPLICITLY REQUESTS "REFRESH"**:
   1. Proceed with full codebase analysis (instructions below)
-  2. After analysis, update `/docs/claude-agent-context/CLAUDE-AGENT-CONTEXT.md`:
+  2. After analysis, update `/docs/core/CLAUDE-AGENT-CONTEXT.md`:
      - Update "Last Updated" timestamp
      - Update relevant sections with new findings
      - Add entry to "Recent Changes Log"
@@ -783,7 +783,11 @@
 
   🚀 SECTION 15: DEPLOYMENT
 
-  📄 **Production Deployment Guide**: See `/docs/compliance/DEPLOYMENT.md` for:
+  📄 **Security & Compliance Checklist**: See `/docs/compliance/SECURITY-CHECKLIST.md` for:
+
+  📄 **Deployment Instructions**: See `/docs/deployment/VERCEL-DEPLOYMENT.md` and `/docs/deployment/UPSTASH-REDIS-SETUP.md` for deployment steps.
+
+  **SECURITY-CHECKLIST.md covers**:
   - Complete environment variable reference (Database, Auth, Redis, Email, SMS)
   - Upstash Redis setup for rate limiting (CRITICAL for production)
   - Security verification checklist (POPIA compliance)
