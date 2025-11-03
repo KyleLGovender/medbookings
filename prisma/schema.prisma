@@ -124,6 +124,10 @@ model Provider {
   availabilityConfigs     ServiceAvailabilityConfig[]
   subscriptions           Subscription[]
   services                Service[]                        @relation("ProviderToService")
+
+  @@index([status]) // For admin filtering by status
+  @@index([userId]) // For user lookups (performance)
+  @@index([name]) // For provider name searches
 }
 
 model Organization {

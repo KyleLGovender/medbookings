@@ -7,3 +7,5 @@ workflow/scripts/**/*.js
 workflow/scripts/**/*.sh
 run-local.js
 e2e/**/*
+artillery-processor.js
+artillery-booking-test.yml

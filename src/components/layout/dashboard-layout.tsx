@@ -22,13 +22,8 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useAdminOrganization } from '@/features/admin/hooks/use-admin-organizations';
-import { useCurrentUserOrganizations } from '@/features/organizations/hooks/use-current-user-organizations';
-import { useOrganization } from '@/features/organizations/hooks/use-organization';
-import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
-import { useProvider } from '@/features/providers/hooks/use-provider';
 import { isMobileForUI } from '@/lib/utils/responsive';
-import { type RouterOutputs } from '@/utils/api';
+import { type RouterOutputs, api } from '@/utils/api';
 
 // Infer types from tRPC router outputs
 type UserOrganizations = RouterOutputs['organizations']['getByUserId'];
@@ -214,17 +209,25 @@ function DynamicBreadcrumb() {
       ? pathSegments[1]
       : undefined;
 
-  const { data: provider, isLoading: isProviderLoading } = useProvider(providerId);
+  // Replace cross-feature hooks with tRPC API calls
+  const { data: provider, isLoading: isProviderLoading } = api.providers.getById.useQuery(
+    { id: providerId ?? '' },
+    { enabled: !!providerId }
+  );
 
   // Use admin hook for admin routes, regular hook for user routes
   const isAdminRoute = pathname.startsWith('/admin');
 
-  const { data: adminOrganization, isLoading: isAdminOrganizationLoading } = useAdminOrganization(
-    isAdminRoute ? organizationId : undefined
-  );
-  const { data: userOrganization, isLoading: isUserOrganizationLoading } = useOrganization(
-    !isAdminRoute ? organizationId : undefined
-  );
+  const { data: adminOrganization, isLoading: isAdminOrganizationLoading } =
+    api.admin.getOrganizationById.useQuery(
+      { id: organizationId ?? '' },
+      { enabled: isAdminRoute && !!organizationId }
+    );
+  const { data: userOrganization, isLoading: isUserOrganizationLoading } =
+    api.organizations.getById.useQuery(
+      { id: organizationId ?? '' },
+      { enabled: !isAdminRoute && !!organizationId }
+    );
 
   const organization = isAdminRoute ? adminOrganization : userOrganization;
   const isOrganizationLoading = isAdminRoute
@@ -618,8 +621,15 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { data: session } = useSession();
-  const { data: userProvider } = useCurrentUserProvider();
-  const { data: userOrganizations = [] } = useCurrentUserOrganizations();
+  // Replace cross-feature hooks with tRPC API calls
+  const { data: userProvider } = api.providers.getByUserId.useQuery(
+    { userId: session?.user?.id ?? '' },
+    { enabled: !!session?.user?.id }
+  );
+  const { data: userOrganizations = [] } = api.organizations.getByUserId.useQuery(
+    { userId: session?.user?.id ?? '' },
+    { enabled: !!session?.user?.id }
+  );
 
   // Convert single provider to array format for navigation
   const providers = userProvider ? [userProvider] : [];

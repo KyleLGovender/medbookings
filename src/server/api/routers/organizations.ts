@@ -1,6 +1,10 @@
 import { OrganizationBillingModel, OrganizationRole, Prisma } from '@prisma/client';
 import { z } from 'zod';
 
+import {
+  type OrganizationInvitationData,
+  getOrganizationInvitationTemplate,
+} from '@/features/communications/lib/email-templates';
 import { logEmail } from '@/features/communications/lib/helper';
 import {
   generateInvitationEmail,
@@ -17,7 +21,10 @@ import {
   validateMemberRoleChange,
 } from '@/features/organizations/lib/actions';
 import { organizationRegistrationSchema } from '@/features/organizations/types/schemas';
+import { createAuditLog } from '@/lib/audit';
 import { getCurrentUser } from '@/lib/auth';
+import { sendEmail } from '@/lib/communications/email';
+import { logger, sanitizeEmail } from '@/lib/logger';
 import { addMilliseconds, nowUTC } from '@/lib/timezone';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 
@@ -215,6 +222,26 @@ export const organizationsRouter = createTRPCRouter({
         },
       });
 
+      // POPIA Compliance: Audit log for organization update
+      logger.audit('ORGANIZATION_UPDATED', {
+        organizationId: updatedOrganization.id,
+        updatedBy: ctx.session.user.id,
+        action: 'ORGANIZATION_UPDATE',
+      });
+
+      // Also persist to database for compliance reporting
+      await createAuditLog({
+        userId: ctx.session.user.id,
+        action: 'ORGANIZATION_UPDATED',
+        category: 'ADMIN_ACTION',
+        resource: 'Organization',
+        resourceId: updatedOrganization.id,
+        metadata: {
+          organizationName: updatedOrganization.name,
+          updatedBy: ctx.session.user.id,
+        },
+      });
+
       return updatedOrganization;
     }),
 
@@ -239,8 +266,35 @@ export const organizationsRouter = createTRPCRouter({
         throw new Error('Forbidden: Admin access required');
       }
 
+      // Get organization name before deletion for audit log
+      const organization = await ctx.prisma.organization.findUnique({
+        where: { id: input.id },
+        select: { id: true, name: true },
+      });
+
       await ctx.prisma.organization.delete({
         where: { id: input.id },
+      });
+
+      // POPIA Compliance: Audit log for organization deletion
+      logger.audit('ORGANIZATION_DELETED', {
+        organizationId: input.id,
+        organizationName: organization?.name,
+        deletedBy: ctx.session.user.id,
+        action: 'ORGANIZATION_DELETE',
+      });
+
+      // Also persist to database for compliance reporting
+      await createAuditLog({
+        userId: ctx.session.user.id,
+        action: 'ORGANIZATION_DELETED',
+        category: 'ADMIN_ACTION',
+        resource: 'Organization',
+        resourceId: input.id,
+        metadata: {
+          organizationName: organization?.name,
+          deletedBy: ctx.session.user.id,
+        },
       });
 
       return { success: true };
@@ -1180,6 +1234,41 @@ export const organizationsRouter = createTRPCRouter({
           },
         },
       });
+
+      // Send invitation email
+      try {
+        const emailData: OrganizationInvitationData = {
+          organizationName: invitation.organization.name,
+          inviterName: invitation.invitedBy.name || 'A team member',
+          inviterEmail: invitation.invitedBy.email || '',
+          recipientEmail: invitation.email,
+          role: invitation.role,
+          invitationToken: invitation.token,
+          expiresAt: invitation.expiresAt,
+        };
+
+        const emailTemplate = getOrganizationInvitationTemplate(emailData);
+
+        await sendEmail({
+          to: invitation.email,
+          subject: emailTemplate.subject,
+          html: emailTemplate.html,
+          text: emailTemplate.text,
+        });
+
+        logger.info('Organization invitation email sent successfully', {
+          to: sanitizeEmail(invitation.email),
+          organizationId: invitation.organizationId,
+          invitationId: invitation.id,
+        });
+      } catch (error) {
+        // Log error but don't fail the invitation creation
+        logger.error('Failed to send invitation email', {
+          error: error instanceof Error ? error.message : String(error),
+          to: sanitizeEmail(invitation.email),
+          organizationId: invitation.organizationId,
+        });
+      }
 
       return invitation;
     }),

@@ -9,7 +9,6 @@ scripts/
 ├── architecture/       # Architecture validation scripts
 ├── communications/     # Email/SMS/WhatsApp templates and testing
 ├── compliance/        # CLAUDE.md compliance system (Rule Sync)
-├── testing/           # Test utilities and E2E setup
 ├── commit-gate/       # Pre-commit validation (Commit Gate)
 └── archive/           # Deprecated/old scripts
 ```
@@ -114,37 +113,6 @@ node scripts/commit-gate/compliance-validator.js validate-change src/path/to/fil
 
 ---
 
-## 🧪 **Testing** (`testing/`)
-
-Test utilities, E2E test setup, and testing helper scripts.
-
-### Files
-- **`setup-e2e.sh`** - Sets up Playwright E2E testing environment
-- **`test-setup.sh`** - General test setup script
-- **`create-test-booking.js`** - Creates test bookings for testing
-- **`test-booking-email-flow.js`** - Tests booking email flow
-- **`test-booking-notifications.js`** - Tests booking notifications
-- **`test-email-system.js`** - Tests email system functionality
-- **`test-new-templates.js`** - Tests new communication templates
-- **`test-enhanced-warnings.js`** - Tests enhanced warning system
-
-### Usage
-```bash
-# Setup E2E tests
-bash scripts/testing/setup-e2e.sh
-
-# Test email system
-node scripts/testing/test-email-system.js
-
-# Test booking flow
-node scripts/testing/test-booking-email-flow.js
-
-# Test enhanced warnings
-node scripts/testing/test-enhanced-warnings.js
-```
-
----
-
 ## 🔄 **Workflow Integration**
 
 ### Pre-commit Hook (`.husky/pre-commit`)
@@ -224,7 +192,6 @@ npm run lint
 |----------|---------|-------------|
 | **Commit Gate** | Pre-commit validation | Automatic on commit, manual validation |
 | **Compliance** | Setup and maintain rules | Initial setup, after CLAUDE.md changes |
-| **Testing** | Test features and flows | Development, CI/CD |
 | **Communications** | Manage templates | Template updates, testing emails/SMS |
 | **Architecture** | Validate structure | After major changes, CI/CD |
 
@@ -301,7 +268,6 @@ When adding new scripts:
 1. **Choose the correct category**
    - Commit Gate: Pre-commit validation and code checking
    - Compliance: Rule setup/maintenance and configuration
-   - Testing: Test utilities
    - Communications: Templates/notifications
    - Architecture: Structure validation
 
@@ -322,5 +288,5 @@ When adding new scripts:
 
 ---
 
-**Last Updated:** 2024-10-09
+**Last Updated:** 2025-11-03
 **Maintainer:** Development Team

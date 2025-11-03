@@ -521,3 +521,150 @@ MedBookings Admin Portal
 
   return { subject, html, text };
 }
+
+/**
+ * Organization invitation email template
+ */
+export interface OrganizationInvitationData {
+  organizationName: string;
+  inviterName: string;
+  inviterEmail: string;
+  recipientEmail: string;
+  role: string;
+  invitationToken: string;
+  expiresAt: Date;
+}
+
+export function getOrganizationInvitationTemplate(data: OrganizationInvitationData): TemplateData {
+  const invitationUrl = `${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}/invitation/${data.invitationToken}`;
+  const expiryDate = data.expiresAt.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const subject = `Invitation to join ${data.organizationName} on MedBookings`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Organization Invitation</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2563eb; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background-color: #f8fafc; padding: 30px; border-radius: 0 0 8px 8px; }
+        .invitation-box { background-color: white; padding: 25px; border-radius: 8px; margin: 20px 0; border: 2px solid #2563eb; }
+        .detail-row { margin: 15px 0; }
+        .label { font-weight: bold; color: #1e40af; }
+        .value { margin-left: 10px; }
+        .cta-button { background-color: #2563eb; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 25px auto; font-size: 16px; font-weight: bold; }
+        .button-container { text-align: center; }
+        .warning-box { background-color: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #64748b; text-align: center; }
+        h1 { margin: 0; }
+        h3 { color: #1e40af; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🏥 You're Invited!</h1>
+        <p style="font-size: 18px; margin-top: 10px;">Join ${data.organizationName} on MedBookings</p>
+      </div>
+
+      <div class="content">
+        <p>Hello,</p>
+
+        <p><strong>${data.inviterName}</strong> has invited you to join <strong>${data.organizationName}</strong> on MedBookings as a <strong>${data.role}</strong>.</p>
+
+        <div class="invitation-box">
+          <h3>📋 Invitation Details</h3>
+
+          <div class="detail-row">
+            <span class="label">Organization:</span>
+            <span class="value">${data.organizationName}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="label">Your Role:</span>
+            <span class="value">${data.role}</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="label">Invited By:</span>
+            <span class="value">${data.inviterName} (${data.inviterEmail})</span>
+          </div>
+
+          <div class="detail-row">
+            <span class="label">Invitation Expires:</span>
+            <span class="value">${expiryDate}</span>
+          </div>
+        </div>
+
+        <div class="button-container">
+          <a href="${invitationUrl}" class="cta-button">Accept Invitation</a>
+        </div>
+
+        <div class="warning-box">
+          <strong>⏰ Important:</strong> This invitation will expire on ${expiryDate}. Please accept it before then to join the organization.
+        </div>
+
+        <p>By accepting this invitation, you'll be able to:</p>
+        <ul>
+          <li>Access the organization's calendar and availability</li>
+          <li>Manage appointments and bookings</li>
+          <li>Collaborate with other team members</li>
+          <li>Access organization resources and settings based on your role</li>
+        </ul>
+
+        <p>If you have any questions about this invitation, please contact ${data.inviterName} at ${data.inviterEmail}.</p>
+
+        <div class="footer">
+          <p>This invitation was sent to ${data.recipientEmail}</p>
+          <p>If you believe this email was sent to you in error, please ignore it.</p>
+          <p>© ${nowUTC().getFullYear()} MedBookings. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+You're Invited to Join ${data.organizationName} on MedBookings
+================================================================
+
+Hello,
+
+${data.inviterName} has invited you to join ${data.organizationName} on MedBookings as a ${data.role}.
+
+Invitation Details:
+-------------------
+Organization: ${data.organizationName}
+Your Role: ${data.role}
+Invited By: ${data.inviterName} (${data.inviterEmail})
+Invitation Expires: ${expiryDate}
+
+Accept Invitation:
+${invitationUrl}
+
+Important: This invitation will expire on ${expiryDate}. Please accept it before then to join the organization.
+
+By accepting this invitation, you'll be able to:
+- Access the organization's calendar and availability
+- Manage appointments and bookings
+- Collaborate with other team members
+- Access organization resources and settings based on your role
+
+If you have any questions about this invitation, please contact ${data.inviterName} at ${data.inviterEmail}.
+
+This invitation was sent to ${data.recipientEmail}
+If you believe this email was sent to you in error, please ignore it.
+
+© ${nowUTC().getFullYear()} MedBookings. All rights reserved.
+  `;
+
+  return { subject, html, text };
+}

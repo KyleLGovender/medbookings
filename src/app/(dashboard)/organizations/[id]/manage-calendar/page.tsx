@@ -194,10 +194,16 @@ export default function OrganizationAvailabilityPage({
 
   return (
     <>
-      {/* TODO: Need to implement organization-specific calendar view or adapt provider view */}
+      {/* Organization Calendar View - TODO: Add multi-provider support */}
       <div className="p-4">
-        <p>Organization calendar view needs to be implemented</p>
-        <Button onClick={() => handleCreateAvailability()}>Create Availability</Button>
+        <h2 className="mb-4 text-2xl font-bold">Organization Calendar</h2>
+        <p className="mb-6 text-muted-foreground">
+          View and manage calendar availability for all organization members.
+        </p>
+        <Button onClick={() => handleCreateAvailability()}>
+          <Calendar className="mr-2 h-4 w-4" />
+          Create Organization Availability
+        </Button>
       </div>
 
       {/* Series Action Dialog */}

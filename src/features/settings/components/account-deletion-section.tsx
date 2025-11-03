@@ -20,20 +20,21 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDeleteAccount } from '@/features/profile/hooks/use-profile';
-import { useProfile } from '@/features/profile/hooks/use-profile';
-import { useProviderByUserId } from '@/features/providers/hooks/use-provider-by-user-id';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/utils/api';
 
 import { useRequestAccountDeletion } from '../hooks/use-settings';
 
 export default function AccountDeletionSection() {
   const { toast } = useToast();
   const router = useRouter();
-  const deleteAccountMutation = useDeleteAccount();
+  const deleteAccountMutation = api.profile.delete.useMutation();
   const requestAccountDeletion = useRequestAccountDeletion();
-  const { data: profile } = useProfile();
-  const { data: provider } = useProviderByUserId(profile?.id);
+  const { data: profile } = api.profile.get.useQuery();
+  const { data: provider } = api.providers.getByUserId.useQuery(
+    { userId: profile?.id ?? '' },
+    { enabled: !!profile?.id }
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const hasServiceProvider = !!provider;

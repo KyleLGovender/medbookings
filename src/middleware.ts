@@ -10,6 +10,9 @@ import type { NextRequest } from 'next/server';
 import { type JWT, getToken } from 'next-auth/jwt';
 import { withAuth } from 'next-auth/middleware';
 
+import { logger } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
+
 /**
  * Route patterns and their required permissions
  */
@@ -160,6 +163,41 @@ export default withAuth(
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
+    // POPIA Compliance: Session Timeout Enforcement (30 minutes)
+    // Check if session has expired due to inactivity
+    const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
+    const now = nowUTC().getTime();
+
+    // JWT `iat` (issued at) and `exp` (expiration) are in seconds, need to convert to milliseconds
+    const tokenIssuedAt = ((token.iat as number) ?? 0) * 1000;
+    const tokenExpiry = ((token.exp as number) ?? 0) * 1000;
+
+    // Calculate last activity time (we use JWT issued time as proxy for last activity)
+    // In production, you might want to track actual last activity separately
+    const lastActivity = tokenIssuedAt;
+    const timeSinceLastActivity = now - lastActivity;
+
+    // Check if session has timed out due to inactivity
+    if (timeSinceLastActivity > SESSION_TIMEOUT_MS) {
+      // Log the timeout event for audit purposes (POPIA requirement)
+      logger.audit('Session timeout due to inactivity', {
+        userId: token.sub,
+        inactivityMinutes: Math.floor(timeSinceLastActivity / 1000 / 60),
+        pathname,
+        action: 'SESSION_TIMEOUT',
+      });
+
+      // Redirect to login with timeout message
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set('reason', 'session_timeout');
+      loginUrl.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Check if token is about to expire (within 5 minutes)
+    const timeUntilExpiry = tokenExpiry - now;
+    const EXPIRY_WARNING_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+
     // Check route-specific permissions
     const hasAccess = await checkRoutePermissions(pathname, token);
 
@@ -192,6 +230,11 @@ export default withAuth(
     response.headers.set('x-user-role', String(token.role) || 'USER');
     response.headers.set('x-user-id', token.sub || '');
     response.headers.set('x-email-verified', String(isEmailVerified(token.emailVerified ?? null)));
+
+    // Add session timeout warning header if approaching timeout
+    if (timeUntilExpiry < EXPIRY_WARNING_THRESHOLD && timeUntilExpiry > 0) {
+      response.headers.set('x-session-expiry-warning', String(Math.floor(timeUntilExpiry / 1000)));
+    }
 
     if (token.providerRole) {
       response.headers.set('x-provider-role', String(token.providerRole));

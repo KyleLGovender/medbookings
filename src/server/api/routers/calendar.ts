@@ -33,6 +33,7 @@ import {
   sendGuestBookingWhatsApp,
   sendProviderBookingWhatsApp,
 } from '@/features/communications/lib/whatsapp-templates';
+import { createAuditLog } from '@/lib/audit';
 import {
   sendBookingConfirmationEmail,
   sendProviderNotificationEmail,
@@ -1655,7 +1656,33 @@ export const calendarRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Use a transaction to ensure atomic booking creation and prevent concurrent bookings
       const booking = await ctx.prisma.$transaction(async (tx) => {
-        // First, verify slot exists and lock it for update to prevent concurrent access
+        // CRITICAL: Use pessimistic locking with FOR UPDATE to prevent race conditions
+        // This ensures only one transaction can read and modify the slot at a time
+        const lockedSlot = await tx.$queryRaw<
+          Array<{ id: string; status: string; startTime: Date }>
+        >`
+          SELECT id, status, "startTime"
+          FROM "CalculatedAvailabilitySlot"
+          WHERE id = ${input.slotId}
+          FOR UPDATE
+        `;
+
+        if (!lockedSlot || lockedSlot.length === 0) {
+          throw new Error('Slot not found');
+        }
+
+        const slotLockInfo = lockedSlot[0];
+
+        // Verify slot is available (with locked row)
+        if (slotLockInfo.status !== 'AVAILABLE') {
+          throw new Error('Slot is no longer available');
+        }
+
+        if (slotLockInfo.startTime <= nowUTC()) {
+          throw new Error('Cannot book past slots');
+        }
+
+        // Now fetch the full slot data (already locked, so safe from concurrent access)
         const slot = await tx.calculatedAvailabilitySlot.findUnique({
           where: { id: input.slotId },
           include: {
@@ -1683,21 +1710,12 @@ export const calendarRouter = createTRPCRouter({
         });
 
         if (!slot) {
-          throw new Error('Slot not found');
+          throw new Error('Slot data not found');
         }
 
-        // Check if slot is already booked (double-check within transaction)
+        // Final check: ensure no booking exists (should be impossible with proper locking)
         if (slot.booking) {
           throw new Error('Slot is already booked');
-        }
-
-        if (slot.startTime <= nowUTC()) {
-          throw new Error('Cannot book past slots');
-        }
-
-        // Verify slot status is still available
-        if (slot.status !== 'AVAILABLE') {
-          throw new Error('Slot is no longer available');
         }
 
         // Create booking atomically
@@ -1748,6 +1766,38 @@ export const calendarRouter = createTRPCRouter({
         });
 
         return newBooking;
+      });
+
+      // POPIA Compliance: Audit log for booking creation (PHI access)
+      logger.audit('BOOKING_CREATED', {
+        bookingId: booking.id,
+        slotId: input.slotId,
+        providerId: booking.slot?.availability?.providerId,
+        guestEmail: booking.guestEmail
+          ? booking.guestEmail.replace(/(.{2}).*(@.*)/, '$1***$2')
+          : undefined,
+        isGuestBooking: booking.isGuestBooking,
+        action: 'BOOKING_CONFIRMATION',
+        timestamp: nowUTC().toISOString(),
+      });
+
+      // Also persist to database for compliance reporting
+      await createAuditLog({
+        userEmail: booking.guestEmail
+          ? booking.guestEmail.replace(/(.{2}).*(@.*)/, '$1***$2')
+          : undefined,
+        action: 'BOOKING_CREATED',
+        category: 'PHI_ACCESS',
+        resource: 'Booking',
+        resourceId: booking.id,
+        metadata: {
+          slotId: input.slotId,
+          providerId: booking.slot?.availability?.providerId,
+          isGuestBooking: booking.isGuestBooking,
+          guestName: booking.guestName
+            ? booking.guestName.replace(/^(.{2}).*/, '$1***')
+            : undefined,
+        },
       });
 
       // Send notifications (email and WhatsApp)

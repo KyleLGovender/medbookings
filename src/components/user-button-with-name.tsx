@@ -2,8 +2,8 @@
 
 import { useSession } from 'next-auth/react';
 
+import AuthButton from '@/components/auth/auth-button';
 import { ModeToggle } from '@/components/mode-toggle';
-import AuthButton from '@/features/auth/components/auth-button';
 
 export function DashboardUserButton() {
   const { data: session } = useSession();

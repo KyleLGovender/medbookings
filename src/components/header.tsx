@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Menu } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
+import AuthButton from '@/components/auth/auth-button';
 import Logo from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,10 +21,8 @@ import {
 } from '@/components/ui/navigation-menu';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import AuthButton from '@/features/auth/components/auth-button';
-import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
-import { useProviderByUserId } from '@/features/providers/hooks/use-provider-by-user-id';
 import { cn } from '@/lib/utils';
+import { api } from '@/utils/api';
 
 type NavigationItem = {
   title: string;
@@ -58,7 +57,11 @@ export default function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  const { data: provider } = useProviderByUserId(session?.user?.id);
+  // Use tRPC API call instead of cross-feature hook
+  const { data: provider } = api.providers.getByUserId.useQuery(
+    { userId: session?.user?.id ?? '' },
+    { enabled: !!session?.user?.id }
+  );
   const [open, setOpen] = useState(false);
 
   // Helper function to check if a path matches the current pathname
@@ -78,8 +81,11 @@ export default function Header() {
 
   const navigationItems = getNavigationItems(isSignedIn, isAdmin);
 
-  // Fetch organization data for the current user
-  const { data: organization } = useOrganizationByUserId(session?.user?.id);
+  // Use tRPC API call for organization data
+  const { data: organization } = api.organizations.getByUserId.useQuery(
+    { userId: session?.user?.id ?? '' },
+    { enabled: !!session?.user?.id }
+  );
 
   // Check if user has calendar access (approved providers, admins, or super admins)
   // Only providers with approved status can access calendar functionality

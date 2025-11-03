@@ -8,7 +8,9 @@ import {
   communicationPreferencesSchema,
   providerBusinessSettingsSchema,
 } from '@/features/settings/types/schemas';
+import { createAuditLog } from '@/lib/audit';
 import { sendEmailVerification } from '@/lib/communications/email';
+import { logger, sanitizeEmail, sanitizeName } from '@/lib/logger';
 import { addMilliseconds, nowUTC } from '@/lib/timezone';
 import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 
@@ -123,6 +125,29 @@ export const settingsRouter = createTRPCRouter({
         },
       });
 
+      // POPIA Compliance: Audit log for account settings update (PHI access)
+      logger.audit('ACCOUNT_SETTINGS_UPDATED', {
+        userId: updatedUser.id,
+        updatedBy: ctx.session.user.id,
+        name: sanitizeName(updatedUser.name),
+        email: sanitizeEmail(updatedUser.email),
+        action: 'ACCOUNT_SETTINGS_UPDATE',
+      });
+
+      // Also persist to database for compliance reporting
+      await createAuditLog({
+        userId: updatedUser.id,
+        userEmail: sanitizeEmail(updatedUser.email),
+        action: 'ACCOUNT_SETTINGS_UPDATED',
+        category: 'PHI_ACCESS',
+        resource: 'User',
+        resourceId: updatedUser.id,
+        metadata: {
+          updatedBy: ctx.session.user.id,
+          fields: ['name', 'email', 'phone', 'whatsapp'],
+        },
+      });
+
       return updatedUser;
     }),
 
@@ -219,6 +244,27 @@ export const settingsRouter = createTRPCRouter({
           showPrice: true,
           languages: true,
           status: true,
+        },
+      });
+
+      // POPIA Compliance: Audit log for provider settings update
+      logger.audit('PROVIDER_SETTINGS_UPDATED', {
+        providerId: updatedProvider.id,
+        userId: ctx.session.user.id,
+        fields: ['bio', 'website', 'showPrice', 'languages'],
+        action: 'PROVIDER_SETTINGS_UPDATE',
+      });
+
+      // Also persist to database for compliance reporting
+      await createAuditLog({
+        userId: ctx.session.user.id,
+        action: 'PROVIDER_SETTINGS_UPDATED',
+        category: 'PHI_ACCESS',
+        resource: 'Provider',
+        resourceId: updatedProvider.id,
+        metadata: {
+          fields: ['bio', 'website', 'showPrice', 'languages'],
+          providerName: updatedProvider.name,
         },
       });
 

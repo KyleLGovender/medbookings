@@ -5,6 +5,9 @@ import {
   deleteAccountRequestSchema,
   updateProfileRequestSchema,
 } from '@/features/profile/types/schemas';
+import { createAuditLog } from '@/lib/audit';
+import { logger, sanitizeEmail, sanitizeName } from '@/lib/logger';
+import { nowUTC } from '@/lib/timezone';
 import { createTRPCRouter, protectedProcedure } from '@/server/trpc';
 
 export const profileRouter = createTRPCRouter({
@@ -73,6 +76,30 @@ export const profileRouter = createTRPCRouter({
       },
     });
 
+    // POPIA Compliance: Audit log for PHI update
+    logger.audit('USER_PROFILE_UPDATED', {
+      userId: updatedUser.id,
+      updatedBy: ctx.session.user.id,
+      updatedFields: Object.keys(validation.validatedData!).filter((key) => key !== 'userId'),
+      name: sanitizeName(updatedUser.name),
+      email: sanitizeEmail(updatedUser.email),
+      action: 'PROFILE_UPDATE',
+    });
+
+    // Also persist to database for compliance reporting
+    await createAuditLog({
+      userId: updatedUser.id,
+      userEmail: sanitizeEmail(updatedUser.email),
+      action: 'USER_PROFILE_UPDATED',
+      category: 'PHI_ACCESS',
+      resource: 'User',
+      resourceId: updatedUser.id,
+      metadata: {
+        updatedFields: Object.keys(validation.validatedData!).filter((key) => key !== 'userId'),
+        updatedBy: ctx.session.user.id,
+      },
+    });
+
     return updatedUser;
   }),
 
@@ -128,6 +155,26 @@ export const profileRouter = createTRPCRouter({
         });
 
         return { success: true, deletedUserId: validation.validatedData!.userId };
+      });
+
+      // POPIA Compliance: Audit log for account deletion (PHI removal)
+      logger.audit('USER_ACCOUNT_DELETED', {
+        userId: result.deletedUserId,
+        deletedBy: ctx.session.user.id,
+        action: 'ACCOUNT_DELETION',
+        timestamp: nowUTC().toISOString(),
+      });
+
+      // Also persist to database for compliance reporting
+      await createAuditLog({
+        userId: result.deletedUserId,
+        action: 'USER_ACCOUNT_DELETED',
+        category: 'PHI_ACCESS',
+        resource: 'User',
+        resourceId: result.deletedUserId,
+        metadata: {
+          deletedBy: ctx.session.user.id,
+        },
       });
 
       return result;
