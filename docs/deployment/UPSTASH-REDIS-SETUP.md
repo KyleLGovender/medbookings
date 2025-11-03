@@ -183,16 +183,46 @@ vercel env add UPSTASH_REDIS_REST_TOKEN production
 # Paste: AYRlZDAwMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTBhYg==
 ```
 
-### Optional: Add to Preview Environment
+### Staging/Preview Environment Configuration
 
-For testing rate limiting in preview deployments:
+**IMPORTANT:** For cost efficiency on the free tier, staging uses the **same Redis database** as production.
 
-1. Repeat the above steps
-2. Check **"Preview"** environment instead of/in addition to Production
+#### Why Share Redis Between Environments?
 
-**OR** create a separate staging database:
-- Name: `medbookings-rate-limit-staging`
-- Use different credentials for Preview environment
+✅ **Benefits:**
+- No additional cost (stays within 10,000 commands/day free tier)
+- Staging traffic is minimal (1-5% of production)
+- Rate limit keys are isolated by IP address (no collision risk)
+- Simplifies setup and maintenance
+
+⚠️ **Trade-offs:**
+- Production and staging share the 10k commands/day limit
+- Both environments visible in same Upstash dashboard
+- Consider separate database if staging traffic becomes significant
+
+#### Setup Steps:
+
+1. **Vercel Dashboard → Settings → Environment Variables**
+2. **Add the SAME credentials used for Production:**
+   - `UPSTASH_REDIS_REST_URL` (same value)
+   - `UPSTASH_REDIS_REST_TOKEN` (same value)
+3. **Set Environment:** Check **"Preview"** only
+4. **Deploy staging branch** (automatic deployment)
+
+#### Verification:
+
+```bash
+# Both production and staging will show in Upstash Data Browser
+# Production keys: ratelimit:api:ip:xxx.xxx.xxx.xxx
+# Staging keys:    ratelimit:api:ip:yyy.yyy.yyy.yyy
+```
+
+#### When to Create Separate Staging Database:
+
+If you later need environment isolation:
+1. Upgrade Upstash to paid tier (two free databases not available)
+2. Create `medbookings-rate-limit-staging`
+3. Update Vercel Preview environment variables with new credentials
 
 ---
 
@@ -540,10 +570,15 @@ For >100M commands/month or special requirements:
    Upstash Console → Your Database → Settings → Rotate Token
    ```
 
-3. ✅ **Use separate databases for staging/production**
+3. ✅ **Environment isolation strategy**
    ```
-   medbookings-rate-limit-prod     → Production
-   medbookings-rate-limit-staging  → Preview/Staging
+   Free Tier (Current):
+   ├─ Production: medbookings-rate-limit-prod
+   └─ Staging:    medbookings-rate-limit-prod (shared)
+
+   Paid Tier (Future - if needed):
+   ├─ Production: medbookings-rate-limit-prod
+   └─ Staging:    medbookings-rate-limit-staging (separate)
    ```
 
 ### Performance
