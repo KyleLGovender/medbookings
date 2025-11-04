@@ -213,7 +213,7 @@ All sensitive values MUST be stored in environment variables:
 
 ```env
 # Authentication (CRITICAL)
-AUTH_SECRET="[min 32 characters, cryptographically random]"
+NEXTAUTH_SECRET="[min 32 characters, cryptographically random]"
 NEXTAUTH_URL="https://your-production-domain.com"
 
 # Database (CRITICAL)
@@ -243,7 +243,7 @@ ADMIN_NOTIFICATION_EMAIL="notifications@example.com"
 
 ### Security Validation Checklist
 
-- [ ] ✅ **AUTH_SECRET is strong** (32+ characters, random, not guessable)
+- [ ] ✅ **NEXTAUTH_SECRET is strong** (32+ characters, random, not guessable)
 - [ ] ✅ **Production credentials** (not test/development keys)
 - [ ] ✅ **Database URL uses TLS** (`?sslmode=require` or `?ssl=true`)
 - [ ] ✅ **No credentials in code** (`.env` files gitignored)
@@ -251,7 +251,7 @@ ADMIN_NOTIFICATION_EMAIL="notifications@example.com"
 - [ ] ✅ **Graceful degradation** for optional services (Twilio, SendGrid)
 - [ ] ✅ **Fail-closed for critical services** (Redis, Database, Auth)
 
-**Generate strong AUTH_SECRET**:
+**Generate strong NEXTAUTH_SECRET**:
 ```bash
 openssl rand -base64 32
 ```
@@ -261,7 +261,7 @@ openssl rand -base64 32
 // src/config/env/server.ts
 export const env = z.object({
   DATABASE_URL: z.string().min(1),
-  AUTH_SECRET: z.string().min(32),
+  NEXTAUTH_SECRET: z.string().min(32),
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   // ... with conditional requirements for production
@@ -547,7 +547,7 @@ Expected: Treated as literal string, no SQL execution
 
 1. **Immediate Actions**:
    - Force password reset for affected accounts
-   - Invalidate all sessions (rotate `AUTH_SECRET` in production)
+   - Invalidate all sessions (rotate `NEXTAUTH_SECRET` in production)
    - Enable MFA for affected accounts (if implemented)
 
 2. **Investigation**:
@@ -676,7 +676,7 @@ redis-cli -u $UPSTASH_REDIS_REST_URL ping
   - Review POPIA compliance checklist
 
 - [ ] **Credential Rotation** (recommended, not required):
-  - Rotate `AUTH_SECRET` (forces all users to re-login)
+  - Rotate `NEXTAUTH_SECRET` (forces all users to re-login)
   - Rotate API keys (SendGrid, Twilio, etc.)
   - Update OAuth credentials if needed
 

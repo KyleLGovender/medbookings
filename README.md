@@ -1,5 +1,24 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## ⚡ Quick Start
+
+### Environment Setup (REQUIRED)
+
+1. **Create your local environment file:**
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. **Fill in required values** (see [Environment Setup Guide](/docs/setup/ENVIRONMENT-SETUP.md))
+   - Database URL (local PostgreSQL)
+   - Authentication secrets
+   - API keys (OAuth, SendGrid, Twilio)
+
+3. **IMPORTANT:**
+   - ✅ Use `.env.local` for development (gitignored)
+   - ❌ NEVER commit secrets to git
+   - 📚 Full guide: [`/docs/setup/ENVIRONMENT-SETUP.md`](/docs/setup/ENVIRONMENT-SETUP.md)
+
 ## Getting Started
 
 First, run the development server:
@@ -225,7 +244,7 @@ The easiest way to deploy is to use the Vercel Platform:
    DATABASE_URL=postgresql://user:pass@db-host:5432/dbname?sslmode=require
 
    # Authentication
-   AUTH_SECRET=your-secure-random-string-min-32-chars
+   NEXTAUTH_SECRET=your-secure-random-string-min-32-chars
    NEXTAUTH_URL=https://your-domain.vercel.app
 
    # Google OAuth

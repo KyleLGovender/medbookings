@@ -6,7 +6,7 @@ import { z } from 'zod';
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   NEXTAUTH_URL: z.string().url(),
-  AUTH_SECRET: z.string().min(32),
+  NEXTAUTH_SECRET: z.string().min(32), // Aligned with NextAuth.js convention
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
   UPSTASH_REDIS_REST_URL:

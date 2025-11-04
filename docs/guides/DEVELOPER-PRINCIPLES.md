@@ -544,7 +544,7 @@ const formSchema = z.object({ ... });
 import { z } from 'zod';
 export const serverEnv = z.object({
   DATABASE_URL: z.string().url(),
-  AUTH_SECRET: z.string().min(32)
+  NEXTAUTH_SECRET: z.string().min(32)
 }).parse(process.env);
 ```
 

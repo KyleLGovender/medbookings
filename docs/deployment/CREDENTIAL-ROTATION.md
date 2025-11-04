@@ -36,7 +36,7 @@ Rotate credentials immediately if:
 | Credential | Service | Impact if Compromised |
 |------------|---------|----------------------|
 | `DATABASE_URL` | PostgreSQL | Full database access, data breach |
-| `AUTH_SECRET` | NextAuth | Session hijacking, authentication bypass |
+| `NEXTAUTH_SECRET` | NextAuth | Session hijacking, authentication bypass |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth | Impersonate users, steal accounts |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob | Access/delete uploaded files |
 | `TWILIO_AUTH_TOKEN` | Twilio | Send unauthorized SMS/WhatsApp, incur charges |
@@ -89,7 +89,7 @@ npm run prisma studio
 # Should connect successfully and display data
 ```
 
-### 2. NextAuth Secret (`AUTH_SECRET`)
+### 2. NextAuth Secret (`NEXTAUTH_SECRET`)
 
 **Service:** NextAuth.js
 
@@ -276,7 +276,7 @@ vercel --prod
 
 ```bash
 # AWS Elastic Beanstalk
-eb setenv DATABASE_URL="new-value" AUTH_SECRET="new-value"
+eb setenv DATABASE_URL="new-value" NEXTAUTH_SECRET="new-value"
 eb deploy
 
 # Docker / Docker Compose
@@ -287,7 +287,7 @@ docker-compose up -d
 # Kubernetes
 kubectl create secret generic medbookings-secrets \
   --from-literal=DATABASE_URL="new-value" \
-  --from-literal=AUTH_SECRET="new-value" \
+  --from-literal=NEXTAUTH_SECRET="new-value" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl rollout restart deployment/medbookings
@@ -395,7 +395,7 @@ Rotate credentials on a regular schedule to maintain security:
 
 | Credential | Rotation Frequency | Next Due |
 |------------|-------------------|----------|
-| `AUTH_SECRET` | Every 90 days | TBD |
+| `NEXTAUTH_SECRET` | Every 90 days | TBD |
 | `DATABASE_URL` | Every 180 days | TBD |
 | API Keys (Twilio, SendGrid, etc.) | Every 90 days | TBD |
 | OAuth Credentials | Annually | TBD |

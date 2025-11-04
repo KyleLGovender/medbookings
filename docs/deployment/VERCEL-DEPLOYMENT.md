@@ -100,10 +100,10 @@ DATABASE_URL=postgresql://user:pass@db-host:5432/dbname?sslmode=require
 # ─────────────────────────────────────────────────────────
 # AUTHENTICATION
 # ─────────────────────────────────────────────────────────
-AUTH_SECRET=your-secure-random-string-min-32-chars
+NEXTAUTH_SECRET=your-secure-random-string-min-32-chars
 NEXTAUTH_URL=https://your-domain.vercel.app
 
-# Generate AUTH_SECRET with:
+# Generate NEXTAUTH_SECRET with:
 # openssl rand -base64 32
 
 # ─────────────────────────────────────────────────────────

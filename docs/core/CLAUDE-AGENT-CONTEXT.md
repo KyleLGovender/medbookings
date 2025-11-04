@@ -610,7 +610,7 @@ npm run test:ci           # CI/CD pipeline
 ```env
 DATABASE_URL                              # PostgreSQL connection string
 NEXTAUTH_URL                              # App URL (http://localhost:3000)
-AUTH_SECRET                               # NextAuth secret (min 32 chars)
+NEXTAUTH_SECRET                               # NextAuth secret (min 32 chars)
 GOOGLE_CLIENT_ID                          # Google OAuth
 GOOGLE_CLIENT_SECRET                      # Google OAuth
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY          # Google Maps (client-side)

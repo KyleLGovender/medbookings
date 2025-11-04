@@ -937,7 +937,7 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   DATABASE_URL: z.string().url('DATABASE_URL must be a valid URL'),
-  AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters'),
+  NEXTAUTH_SECRET: z.string().min(32, 'NEXTAUTH_SECRET must be at least 32 characters'),
   NEXTAUTH_URL: z.string().url('NEXTAUTH_URL must be a valid URL'),
 
   // Redis (REQUIRED in production)

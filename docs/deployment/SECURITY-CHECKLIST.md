@@ -17,7 +17,7 @@ This checklist MUST be completed before deploying to production and reviewed reg
 - [ ] **ALL credentials stored in secure vault** (Vercel Environment Variables, not in code)
 - [ ] **`.env` file is in `.gitignore`** and NEVER committed
 - [ ] **No credentials in git history** (run: `git log --all --full-history -- .env`)
-- [ ] **AUTH_SECRET is strong** (minimum 32 characters, generated with `openssl rand -base64 32`)
+- [ ] **NEXTAUTH_SECRET is strong** (minimum 32 characters, generated with `openssl rand -base64 32`)
 - [ ] **Different credentials for each environment** (dev, staging, production)
 - [ ] **All API keys rotated in last 90 days** (document in `/docs/deployment/CREDENTIAL-ROTATION.md`)
 - [ ] **Team members use credential managers** (1Password, LastPass, not plain text)

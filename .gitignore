@@ -28,9 +28,16 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
+# Environment files (CRITICAL - NEVER commit secrets)
+# SECURITY: These files contain API keys, database credentials, and authentication secrets
+# Production secrets: Managed ONLY in Vercel Dashboard
+# Local development: Use .env.local (gitignored)
+# Template: .env.example (tracked, no secrets)
 .env
+.env.local
+.env*.local
+.env.production
+.env.production.local
 
 
 # typescript
@@ -65,3 +72,4 @@ workflow/patterns/staging/**/*
 !workflow/patterns/staging/**/.gitkeep
 workflow/technical-plans/**/*
 !workflow/technical-plans/**/.gitkeep
+.vercel

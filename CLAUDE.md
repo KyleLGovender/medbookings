@@ -828,7 +828,7 @@
   Critical Production Requirements
 
   - Upstash Redis configured for rate limiting (REQUIRED)
-  - Strong AUTH_SECRET (minimum 32 characters, random)
+  - Strong NEXTAUTH_SECRET (minimum 32 characters, random)
   - All environment variables configured in deployment platform
   - Database migrations applied (npx prisma migrate deploy)
   - Security headers verified (HSTS, CSP, X-Frame-Options)
