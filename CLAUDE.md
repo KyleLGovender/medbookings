@@ -5,7 +5,7 @@
   Claude Code: Read this BEFORE generating or editing ANY code.
 
   BEFORE CODE GENERATION:
-  ☐ Review relevant section in /docs/guides/DEVELOPER-PRINCIPLES.md
+  ☐ Review relevant section in 📄 **Developer Principles** (See `/docs/guides/DEVELOPER-PRINCIPLES.md`)
   ☐ Identify required utilities (timezone, logger, etc.)
 
   DURING CODE GENERATION - ALWAYS USE:
@@ -817,7 +817,11 @@
 
   📄 **Deployment Instructions**: See `/docs/deployment/VERCEL-DEPLOYMENT.md` and `/docs/deployment/UPSTASH-REDIS-SETUP.md` for deployment steps.
 
+  📄 **Environment Setup Guide**: See `/docs/setup/ENVIRONMENT-SETUP.md` for complete setup walkthrough, local development configuration, and troubleshooting.
+
   📄 **Environment Variables Reference**: See `/docs/setup/ENVIRONMENT-VARIABLES.md` for complete variable reference, credential setup, and validation.
+
+  📄 **Credential Rotation**: See `/docs/deployment/CREDENTIAL-ROTATION.md` for security procedures, rotation schedules, and zero-downtime strategies.
 
   **SECURITY-CHECKLIST.md covers**:
   - Security verification checklist (POPIA compliance)

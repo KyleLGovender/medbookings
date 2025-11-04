@@ -253,7 +253,7 @@ class ClaudeMdParser {
       missingDocs: [],
     };
 
-    // Expected /docs/compliance/ files
+    // Expected /docs/ files (all referenced documentation)
     const expectedDocs = [
       'compliance/CONTEXT-LOADING.md',
       'compliance/TYPE-SAFETY.md',
@@ -263,15 +263,24 @@ class ClaudeMdParser {
       'compliance/BUG-DETECTION.md',
       'compliance/DEVELOPMENT-WORKFLOW.md',
       'compliance/COMPLIANCE-SYSTEM.md',
-      'compliance/SECURITY-CHECKLIST.md',
       'compliance/CLAUDE-MD-AUTO-SYNC.md',
+      'compliance/ENFORCEMENT-COVERAGE.md',
       'core/CLAUDE-AGENT-CONTEXT.md',
       'core/DATABASE-OPERATIONS.md',
       'core/TODO-TRACKING.md',
+      'deployment/SECURITY-CHECKLIST.md',
+      'deployment/CREDENTIAL-ROTATION.md',
+      'deployment/UPSTASH-REDIS-SETUP.md',
+      'deployment/VERCEL-DEPLOYMENT.md',
+      'setup/ENVIRONMENT-SETUP.md',
+      'setup/ENVIRONMENT-VARIABLES.md',
+      'guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md',
+      'guides/DEVELOPER-PRINCIPLES.md',
+      'guides/DOCS-VALIDATION-GUIDE.md',
     ];
 
     // Extract all /docs/ references from CLAUDE.md (including subdirectories)
-    const docRefPattern = /\/docs\/((?:compliance|guides|core|deployment)\/[A-Z-]+\.md)/g;
+    const docRefPattern = /\/docs\/((?:compliance|guides|core|deployment|setup)\/[A-Z-]+\.md)/g;
     const matches = this.content.matchAll(docRefPattern);
 
     for (const match of matches) {

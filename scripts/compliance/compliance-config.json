@@ -1,9 +1,9 @@
 {
-  "claudeMdHash": "9a7601eb04dd68fdf2fc8491d7586a177d031a7e51b80de06f011fb3247a9217",
-  "lastSync": "2025-11-04T09:40:20.816Z",
+  "claudeMdHash": "1f68e31a35dea53aa2af47a249e135f917e1a28088769368aeda07b860752d5d",
+  "lastSync": "2025-11-04T09:46:08.391Z",
   "validatorConfig": {
     "version": "1.0.0",
-    "lastUpdated": "2025-11-04T09:40:20.816Z",
+    "lastUpdated": "2025-11-04T09:46:08.391Z",
     "rules": {
       "timezone": {
         "enabled": true,
@@ -147,9 +147,12 @@
       "guides/DOCS-VALIDATION-GUIDE.md",
       "deployment/SECURITY-CHECKLIST.md",
       "deployment/VERCEL-DEPLOYMENT.md",
-      "deployment/UPSTASH-REDIS-SETUP.md"
+      "deployment/UPSTASH-REDIS-SETUP.md",
+      "setup/ENVIRONMENT-SETUP.md",
+      "setup/ENVIRONMENT-VARIABLES.md",
+      "deployment/CREDENTIAL-ROTATION.md"
     ],
     "orphanedDocs": [],
-    "lastValidated": "2025-11-04T09:40:20.816Z"
+    "lastValidated": "2025-11-04T09:46:08.391Z"
   }
 }
