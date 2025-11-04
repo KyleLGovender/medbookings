@@ -111,6 +111,7 @@ export const authRouter = createTRPCRouter({
 
         // Check if already verified
         if (userToVerify.emailVerified) {
+          // tx-safe: cleanup operation, idempotent, no race condition (already verified)
           // Clean up the token since verification is already complete
           await ctx.prisma.emailVerificationToken.deleteMany({
             where: {
@@ -194,26 +195,28 @@ export const authRouter = createTRPCRouter({
           };
         }
 
-        // Delete any existing unused tokens for this user
-        await ctx.prisma.passwordResetToken.deleteMany({
-          where: {
-            userId: user.id,
-            usedAt: null, // Only delete unused tokens
-          },
-        });
-
         // Generate secure token
         const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = addMilliseconds(nowUTC(), 60 * 60 * 1000); // 1 hour expiry
 
-        // Create password reset token
-        await ctx.prisma.passwordResetToken.create({
-          data: {
-            userId: user.id,
-            token,
-            expires: expiresAt,
-          },
-        });
+        // Use transaction to atomically cleanup old tokens and create new one
+        await ctx.prisma.$transaction([
+          // Delete any existing unused tokens for this user
+          ctx.prisma.passwordResetToken.deleteMany({
+            where: {
+              userId: user.id,
+              usedAt: null, // Only delete unused tokens
+            },
+          }),
+          // Create password reset token
+          ctx.prisma.passwordResetToken.create({
+            data: {
+              userId: user.id,
+              token,
+              expires: expiresAt,
+            },
+          }),
+        ]);
 
         // TODO: Send password reset email
         // const { sendPasswordResetEmail } = await import('@/features/communications/lib/email-templates');

@@ -63,6 +63,7 @@ export const profileRouter = createTRPCRouter({
       });
     }
 
+    // tx-safe: single write, profile update, validated by business logic
     // Single database query with automatic type inference
     const updatedUser = await ctx.prisma.user.update({
       where: { id: validation.validatedData!.userId },

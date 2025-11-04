@@ -348,6 +348,7 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, admin approval, audit log is separate concern (best-effort)
       // Approve the provider
       const updatedProvider = await ctx.prisma.provider.update({
         where: { id: input.id },
@@ -489,6 +490,7 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, admin rejection, audit log is separate concern (best-effort)
       // Reject the provider
       const updatedProvider = await ctx.prisma.provider.update({
         where: { id: input.id },
