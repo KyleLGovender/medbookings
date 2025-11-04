@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 
 import { ConnectionStatus } from '@prisma/client';
@@ -201,9 +202,11 @@ export function ConnectionCard({ connection, showActions = true }: ConnectionCar
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
               {connection.organization.logo ? (
-                <img
+                <Image
                   src={connection.organization.logo}
                   alt={connection.organization.name}
+                  width={48}
+                  height={48}
                   className="h-12 w-12 rounded-lg border object-cover"
                 />
               ) : (

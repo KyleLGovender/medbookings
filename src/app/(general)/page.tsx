@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 import { ArrowRight, ArrowRightIcon, Bell, Calendar, CheckCircle, Users } from 'lucide-react';
 
 import LandingBookingQuery from '@/components/landing-booking-query';
@@ -117,7 +119,7 @@ export default function LandingPage() {
       >
         <div className="grid items-center gap-12 md:grid-cols-2">
           <div className="order-2 hidden md:order-1 md:block">
-            <img
+            <Image
               src="/medbookings-landing.png"
               alt="Healthcare provider"
               width={600}

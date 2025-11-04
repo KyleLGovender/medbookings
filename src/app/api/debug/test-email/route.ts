@@ -1,3 +1,4 @@
+/* eslint-disable n/no-process-env -- Debug endpoint for testing email configuration */
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth';

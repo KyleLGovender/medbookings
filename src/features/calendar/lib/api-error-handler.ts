@@ -7,6 +7,7 @@
  *
  * @author MedBookings Development Team
  */
+import env from '@/config/env/server';
 import { logger } from '@/lib/logger';
 
 // =============================================================================
@@ -312,7 +313,7 @@ export async function apiRequest<T = unknown>(
  */
 export function logApiError(error: ApiError, context?: Record<string, unknown>): void {
   // In development, log to console
-  if (process.env.NODE_ENV === 'development') {
+  if (env.NODE_ENV === 'development') {
     logger.error('API Error', {
       code: error.code,
       status: error.status,

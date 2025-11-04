@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
+/* eslint-disable n/no-process-env -- tRPC handler needs process.env for development mode check */
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 
 import { logger } from '@/lib/logger';

@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
+
 import Providers from '@/components/providers';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -42,6 +45,8 @@ export default function RootLayout({
       <body className="antialiased">
         <Providers>{children}</Providers>
         <Toaster />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

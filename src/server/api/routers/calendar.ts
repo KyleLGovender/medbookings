@@ -9,6 +9,7 @@ import {
   SchedulingRule,
   ServiceAvailabilityConfig,
 } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 import { addDays } from 'date-fns';
 import { z } from 'zod';
 
@@ -110,7 +111,7 @@ export const calendarRouter = createTRPCRouter({
     });
 
     if (!availability) {
-      throw new Error('Availability not found');
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Availability not found' });
     }
 
     return availability;
@@ -123,21 +124,29 @@ export const calendarRouter = createTRPCRouter({
   create: protectedProcedure.input(availabilityCreateSchema).mutation(async ({ ctx, input }) => {
     // Check if user's email is verified
     if (!ctx.session.user.emailVerified) {
-      throw new Error(
-        'Email verification required. Please verify your email address before managing calendar availability.'
-      );
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message:
+          'Email verification required. Please verify your email address before managing calendar availability.',
+      });
     }
 
     // 1. Call business logic validation
     const validation = await validateAvailabilityCreation(input);
 
     if (!validation.success) {
-      throw new Error(validation.error || 'Failed to validate availability creation');
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: validation.error || 'Failed to validate availability creation',
+      });
     }
 
     const { validatedData } = validation;
     if (!validatedData) {
-      throw new Error('Validation data is missing');
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Validation data is missing',
+      });
     }
 
     // 2. Perform all database operations in single transaction
@@ -290,24 +299,35 @@ export const calendarRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Check if user's email is verified
       if (!ctx.session.user.emailVerified) {
-        throw new Error(
-          'Email verification required. Please verify your email address before managing calendar availability.'
-        );
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message:
+            'Email verification required. Please verify your email address before managing calendar availability.',
+        });
       }
 
       // 1. Call business logic validation
       const validation = await validateAvailabilityUpdate(input);
 
       if (!validation.success) {
-        throw new Error(validation.error || 'Failed to validate availability update');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.error || 'Failed to validate availability update',
+        });
       }
 
       const { validatedData } = validation;
       if (!validatedData) {
-        throw new Error('Validation data is missing');
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Validation data is missing',
+        });
       }
       if (!validatedData.existingAvailability) {
-        throw new Error('Existing availability data is missing');
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Existing availability data is missing',
+        });
       }
 
       // 2. Perform all database operations in single transaction with timeout
@@ -406,7 +426,10 @@ export const calendarRouter = createTRPCRouter({
             if (validatedData.updateStrategy !== 'single') {
               const { existingAvailability } = validatedData;
               if (!existingAvailability) {
-                throw new Error('Existing availability is required for series updates');
+                throw new TRPCError({
+                  code: 'INTERNAL_SERVER_ERROR',
+                  message: 'Existing availability is required for series updates',
+                });
               }
 
               // Step 1: Clean up existing data
@@ -541,7 +564,10 @@ export const calendarRouter = createTRPCRouter({
 
             // Ensure updatedAvailabilities is defined
             if (!updatedAvailabilities) {
-              throw new Error('Failed to update availabilities');
+              throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'Failed to update availabilities',
+              });
             }
 
             // Handle slot regeneration if needed
@@ -657,28 +683,37 @@ export const calendarRouter = createTRPCRouter({
           transactionError instanceof Error ? transactionError.message : String(transactionError);
 
         if (errorCode === 'P2028') {
-          throw new Error(
-            'Database transaction timed out. This may be due to high server load. Please try again in a moment.'
-          );
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message:
+              'Database transaction timed out. This may be due to high server load. Please try again in a moment.',
+          });
         } else if (errorCode === 'P2034') {
-          throw new Error(
-            'Database transaction failed due to a conflict. Please refresh and try again.'
-          );
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Database transaction failed due to a conflict. Please refresh and try again.',
+          });
         } else if (errorMessage.includes('timeout')) {
-          throw new Error(
-            'Operation timed out. Please try updating with fewer changes or try again later.'
-          );
+          throw new TRPCError({
+            code: 'TIMEOUT',
+            message:
+              'Operation timed out. Please try updating with fewer changes or try again later.',
+          });
         } else {
-          throw new Error(
-            `Failed to update availability: ${errorMessage || 'Unknown database error'}`
-          );
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `Failed to update availability: ${errorMessage || 'Unknown database error'}`,
+          });
         }
       }
 
       // 3. Handle cache revalidation
       const { existingAvailability } = validatedData;
       if (!existingAvailability) {
-        throw new Error('Existing availability is required for cache revalidation');
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Existing availability is required for cache revalidation',
+        });
       }
 
       revalidatePath('/dashboard/availability');
@@ -721,9 +756,11 @@ export const calendarRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Check if user's email is verified
       if (!ctx.session.user.emailVerified) {
-        throw new Error(
-          'Email verification required. Please verify your email address before managing calendar availability.'
-        );
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message:
+            'Email verification required. Please verify your email address before managing calendar availability.',
+        });
       }
 
       // Handle single availability deletion with scope
@@ -752,7 +789,10 @@ export const calendarRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const currentUser = ctx.session?.user;
       if (!currentUser) {
-        throw new Error('Authentication required');
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required',
+        });
       }
 
       const where: Prisma.AvailabilityWhereInput = {};
@@ -872,7 +912,10 @@ export const calendarRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const currentUser = ctx.session?.user;
       if (!currentUser) {
-        throw new Error('Authentication required');
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required',
+        });
       }
 
       const where: Prisma.AvailabilityWhereInput = { providerId: input.providerId };
@@ -943,7 +986,10 @@ export const calendarRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const currentUser = ctx.session?.user;
       if (!currentUser) {
-        throw new Error('Authentication required');
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required',
+        });
       }
 
       const where: Prisma.AvailabilityWhereInput = { organizationId: input.organizationId };
@@ -1014,7 +1060,10 @@ export const calendarRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const currentUser = ctx.session?.user;
       if (!currentUser) {
-        throw new Error('Authentication required');
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required',
+        });
       }
 
       const where: Prisma.AvailabilityWhereInput = { seriesId: input.seriesId };
@@ -1102,15 +1151,24 @@ export const calendarRouter = createTRPCRouter({
       });
 
       if (!availability) {
-        throw new Error('Availability not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Availability not found',
+        });
       }
 
       if (currentUserProvider?.id !== availability.providerId) {
-        throw new Error('Only the assigned provider can accept this proposal');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only the assigned provider can accept this proposal',
+        });
       }
 
       if (availability.status !== AvailabilityStatus.PENDING) {
-        throw new Error('Availability is not pending acceptance');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Availability is not pending acceptance',
+        });
       }
 
       const updatedAvailability = await ctx.prisma.availability.update({
@@ -1193,15 +1251,24 @@ export const calendarRouter = createTRPCRouter({
       });
 
       if (!availability) {
-        throw new Error('Availability not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Availability not found',
+        });
       }
 
       if (currentUserProvider?.id !== availability.providerId) {
-        throw new Error('Only the assigned provider can reject this proposal');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only the assigned provider can reject this proposal',
+        });
       }
 
       if (availability.status !== AvailabilityStatus.PENDING) {
-        throw new Error('Availability is not pending response');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Availability is not pending response',
+        });
       }
 
       await ctx.prisma.availability.update({
@@ -1668,18 +1735,18 @@ export const calendarRouter = createTRPCRouter({
         `;
 
         if (!lockedSlot || lockedSlot.length === 0) {
-          throw new Error('Slot not found');
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Slot not found' });
         }
 
         const slotLockInfo = lockedSlot[0];
 
         // Verify slot is available (with locked row)
         if (slotLockInfo.status !== 'AVAILABLE') {
-          throw new Error('Slot is no longer available');
+          throw new TRPCError({ code: 'CONFLICT', message: 'Slot is no longer available' });
         }
 
         if (slotLockInfo.startTime <= nowUTC()) {
-          throw new Error('Cannot book past slots');
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot book past slots' });
         }
 
         // Now fetch the full slot data (already locked, so safe from concurrent access)
@@ -1710,12 +1777,12 @@ export const calendarRouter = createTRPCRouter({
         });
 
         if (!slot) {
-          throw new Error('Slot data not found');
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Slot data not found' });
         }
 
         // Final check: ensure no booking exists (should be impossible with proper locking)
         if (slot.booking) {
-          throw new Error('Slot is already booked');
+          throw new TRPCError({ code: 'CONFLICT', message: 'Slot is already booked' });
         }
 
         // Create booking atomically
@@ -1893,12 +1960,12 @@ export const calendarRouter = createTRPCRouter({
       });
 
       if (!booking) {
-        throw new Error('Booking not found');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Booking not found' });
       }
 
       // Check authorization
       if (booking.slot?.availability?.provider?.userId !== ctx.session.user.id) {
-        throw new Error('Unauthorized access to booking');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Unauthorized access to booking' });
       }
 
       return booking;
@@ -2004,7 +2071,10 @@ export const calendarRouter = createTRPCRouter({
       });
 
       if (!existingBooking) {
-        throw new Error('Booking not found or you do not have permission to update it');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Booking not found or you do not have permission to update it',
+        });
       }
 
       const updatedBooking = await ctx.prisma.booking.update({
@@ -2046,7 +2116,10 @@ export const calendarRouter = createTRPCRouter({
       });
 
       if (!existingBooking) {
-        throw new Error('Booking not found or you do not have permission to cancel it');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Booking not found or you do not have permission to cancel it',
+        });
       }
 
       // Cancel the booking
@@ -2094,7 +2167,10 @@ export const calendarRouter = createTRPCRouter({
       });
 
       if (!existingBooking) {
-        throw new Error('Booking not found or you do not have permission to reschedule it');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Booking not found or you do not have permission to reschedule it',
+        });
       }
 
       // Verify the new slot exists and is available
@@ -2103,7 +2179,7 @@ export const calendarRouter = createTRPCRouter({
       });
 
       if (!newSlot || newSlot.status !== 'AVAILABLE') {
-        throw new Error('Selected slot is not available');
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Selected slot is not available' });
       }
 
       // Update the booking with the new slot
@@ -2293,15 +2369,24 @@ async function deleteSingleAvailability(
   const validation = await validateAvailabilityDeletion(id, scope);
 
   if (!validation.success) {
-    throw new Error(validation.error || 'Failed to validate availability deletion');
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: validation.error || 'Failed to validate availability deletion',
+    });
   }
 
   const { validatedData } = validation;
   if (!validatedData) {
-    throw new Error('Validation data is missing');
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Validation data is missing',
+    });
   }
   if (!validatedData.existingAvailability) {
-    throw new Error('Existing availability data is missing');
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Existing availability data is missing',
+    });
   }
 
   // 2. Perform all database operations in single transaction
@@ -2396,9 +2481,10 @@ async function deleteBatchAvailabilities(
   }
 
   if (errors.length > 0) {
-    throw new Error(
-      `Failed to delete ${errors.length} availability(s): ${errors.map((e) => `${e.id}: ${e.error}`).join(', ')}`
-    );
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: `Failed to delete ${errors.length} availability(s): ${errors.map((e) => `${e.id}: ${e.error}`).join(', ')}`,
+    });
   }
 
   // Combine results

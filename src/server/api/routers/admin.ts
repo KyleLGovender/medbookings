@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import env from '@/config/env/server';
 import {
   adminRouteParamsSchema,
   adminSearchParamsSchema,
@@ -197,7 +199,10 @@ export const adminRouter = createTRPCRouter({
     });
 
     if (!provider) {
-      throw new Error('Provider not found');
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Provider not found',
+      });
     }
 
     return provider;
@@ -228,7 +233,10 @@ export const adminRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       return provider.requirementSubmissions;
@@ -278,7 +286,10 @@ export const adminRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Use the business logic validation function (Option C compliant)
@@ -293,9 +304,10 @@ export const adminRouter = createTRPCRouter({
           .map((type) => `${type.typeName}: ${type.pendingCount} pending`)
           .join(', ');
 
-        throw new Error(
-          `Cannot approve provider: ${validationResult.pendingRequirementsCount} required requirements are not approved. ${pendingDetails}`
-        );
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: `Cannot approve provider: ${validationResult.pendingRequirementsCount} required requirements are not approved. ${pendingDetails}`,
+        });
       }
 
       // Validate that DOCUMENT requirements have uploaded files
@@ -314,9 +326,10 @@ export const adminRouter = createTRPCRouter({
       if (missingDocuments.length > 0) {
         const missingNames = missingDocuments.map((sub) => sub.requirementType.name).join(', ');
 
-        throw new Error(
-          `Cannot approve provider: ${missingDocuments.length} required documents are not uploaded. Missing: ${missingNames}`
-        );
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: `Cannot approve provider: ${missingDocuments.length} required documents are not uploaded. Missing: ${missingNames}`,
+        });
       }
 
       // Validate that documents are not expired
@@ -329,9 +342,10 @@ export const adminRouter = createTRPCRouter({
           .map((sub) => `${sub.requirementType.name} (expired ${sub.expiresAt!.toISOString()})`)
           .join(', ');
 
-        throw new Error(
-          `Cannot approve provider: ${expiredDocuments.length} required documents have expired. Expired: ${expiredNames}`
-        );
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: `Cannot approve provider: ${expiredDocuments.length} required documents have expired. Expired: ${expiredNames}`,
+        });
       }
 
       // Approve the provider
@@ -407,7 +421,7 @@ export const adminRouter = createTRPCRouter({
                     <p>Your approved profile status confirms that all your regulatory requirements have been verified. To start receiving patient bookings, you'll need to activate your profile by subscribing to one of our service plans.</p>
 
                     <div style="text-align: center; margin-top: 30px;">
-                      <a href="${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}/provider-profile" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Go to Your Provider Profile</a>
+                      <a href="${env.NEXTAUTH_URL || 'https://medbookings.co.za'}/provider-profile" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Go to Your Provider Profile</a>
                     </div>
 
                     <p style="margin-top: 20px;">If you have any questions, please don't hesitate to contact our support team.</p>
@@ -420,7 +434,7 @@ export const adminRouter = createTRPCRouter({
                 </body>
               </html>
             `,
-            text: `Congratulations! Your Provider Profile is Approved\n\nDear ${updatedProvider.name},\n\nGreat news! Your provider profile on MedBookings has been reviewed and approved by our admin team.\n\nWhat's next?\n- Subscribe to one of our plans to activate your profile\n- Set up your availability calendar\n- Configure your services and pricing\n- Complete your profile information\n\nVisit your provider profile: ${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}/provider-profile\n\nBest regards,\nThe MedBookings Team`,
+            text: `Congratulations! Your Provider Profile is Approved\n\nDear ${updatedProvider.name},\n\nGreat news! Your provider profile on MedBookings has been reviewed and approved by our admin team.\n\nWhat's next?\n- Subscribe to one of our plans to activate your profile\n- Set up your availability calendar\n- Configure your services and pricing\n- Complete your profile information\n\nVisit your provider profile: ${env.NEXTAUTH_URL || 'https://medbookings.co.za'}/provider-profile\n\nBest regards,\nThe MedBookings Team`,
           });
 
           logger.info('Provider approval email sent', {
@@ -469,7 +483,10 @@ export const adminRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Reject the provider
@@ -530,11 +547,17 @@ export const adminRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       if (provider.status !== 'REJECTED') {
-        throw new Error('Provider must be in REJECTED status to reset');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Provider must be in REJECTED status to reset',
+        });
       }
 
       // Reset the provider to pending approval
@@ -598,7 +621,10 @@ export const adminRouter = createTRPCRouter({
       });
 
       if (!submission) {
-        throw new Error('Requirement submission not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Requirement submission not found',
+        });
       }
 
       // Approve the requirement
@@ -667,7 +693,10 @@ export const adminRouter = createTRPCRouter({
       });
 
       if (!submission) {
-        throw new Error('Requirement submission not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Requirement submission not found',
+        });
       }
 
       // Reject the requirement
@@ -782,7 +811,10 @@ export const adminRouter = createTRPCRouter({
       });
 
       if (!organization) {
-        throw new Error('Organization not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Organization not found',
+        });
       }
 
       return organization;
@@ -813,22 +845,34 @@ export const adminRouter = createTRPCRouter({
       });
 
       if (!organization) {
-        throw new Error('Organization not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Organization not found',
+        });
       }
 
       // Validate organization has owner
       if (organization.memberships.length === 0) {
-        throw new Error('Cannot approve organization: No owner assigned');
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'Cannot approve organization: No owner assigned',
+        });
       }
 
       // Validate organization has at least one location
       if (organization.locations.length === 0) {
-        throw new Error('Cannot approve organization: No locations added');
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'Cannot approve organization: No locations added',
+        });
       }
 
       // Validate organization has required contact information
       if (!organization.email && !organization.phone) {
-        throw new Error('Cannot approve organization: Must have email or phone contact');
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'Cannot approve organization: Must have email or phone contact',
+        });
       }
 
       // Approve the organization
@@ -881,7 +925,10 @@ export const adminRouter = createTRPCRouter({
       });
 
       if (!organization) {
-        throw new Error('Organization not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Organization not found',
+        });
       }
 
       // Reject the organization
@@ -940,11 +987,17 @@ export const adminRouter = createTRPCRouter({
       });
 
       if (!organization) {
-        throw new Error('Organization not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Organization not found',
+        });
       }
 
       if (organization.status !== 'REJECTED') {
-        throw new Error('Organization must be in REJECTED status to reset');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Organization must be in REJECTED status to reset',
+        });
       }
 
       // Reset the organization to pending approval
@@ -994,7 +1047,10 @@ export const adminRouter = createTRPCRouter({
       });
 
       if (!targetUser) {
-        throw new Error('Target user not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Target user not found',
+        });
       }
 
       // Log admin override action

@@ -55,7 +55,7 @@ async function checkAndPromoteToAdmin(
   user: { id?: string; email?: string | null; role?: UserRole },
   existingUserId?: string
 ): Promise<UserRole> {
-  const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
+  const adminEmails = env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
 
   if (!user.email || !adminEmails.includes(user.email)) {
     return user.role || 'USER'; // Default role
@@ -535,7 +535,7 @@ export const authOptions: NextAuthOptions = {
                     <p style="margin-top: 20px;">If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
 
                     <div style="text-align: center; margin-top: 30px;">
-                      <a href="${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Visit MedBookings</a>
+                      <a href="${env.NEXTAUTH_URL || 'https://medbookings.co.za'}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Visit MedBookings</a>
                     </div>
                   </div>
 
@@ -546,7 +546,7 @@ export const authOptions: NextAuthOptions = {
                 </body>
               </html>
             `,
-              text: `Welcome to MedBookings!\n\nHi ${user.name || 'there'},\n\nYour account has been successfully created. You can now browse and book appointments with healthcare providers.\n\nVisit: ${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}`,
+              text: `Welcome to MedBookings!\n\nHi ${user.name || 'there'},\n\nYour account has been successfully created. You can now browse and book appointments with healthcare providers.\n\nVisit: ${env.NEXTAUTH_URL || 'https://medbookings.co.za'}`,
             });
 
             logger.info('Welcome email sent to verified user', {

@@ -91,7 +91,7 @@ module.exports = {
         packageDir: ['./'],
       },
     ],
-    '@next/next/no-img-element': 'off',
+    '@next/next/no-img-element': 'error',
 
     // =============================================================================
     // SECURITY & PHI PROTECTION RULES

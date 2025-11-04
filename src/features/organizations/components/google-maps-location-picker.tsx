@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import clientEnv from '@/config/env/client';
 import { isDevelopment } from '@/lib/constants';
 import { logger } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
@@ -69,8 +70,7 @@ export function GoogleMapsLocationPicker({
   const [error, setError] = useState<string | null>(null);
 
   // Check if we have the API key
-  // eslint-disable-next-line no-process-env
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const apiKey = clientEnv.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   const processLocationResult = useCallback(
     async (result: google.maps.GeocoderResult) => {

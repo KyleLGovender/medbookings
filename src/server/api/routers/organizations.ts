@@ -1,4 +1,5 @@
 import { OrganizationBillingModel, OrganizationRole, Prisma } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import {
@@ -61,7 +62,7 @@ export const organizationsRouter = createTRPCRouter({
     });
 
     if (!organization) {
-      throw new Error('Organization not found');
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Organization not found' });
     }
 
     // Check if the current user is a member of this organization or is an admin
@@ -72,7 +73,10 @@ export const organizationsRouter = createTRPCRouter({
     const isSystemAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(ctx.session.user.role || '');
 
     if (!userMembership && !isSystemAdmin) {
-      throw new Error('You do not have permission to access this organization');
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have permission to access this organization',
+      });
     }
 
     return organization;
@@ -86,14 +90,17 @@ export const organizationsRouter = createTRPCRouter({
     .input(organizationRegistrationSchema)
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user) {
-        throw new Error('User not authenticated');
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'User not authenticated' });
       }
 
       // Call server action for business logic and validation only
       const result = await registerOrganization(input);
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to register organization');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: result.error || 'Failed to register organization',
+        });
       }
 
       // Type guard ensures we have the success case
@@ -174,7 +181,10 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!createdOrganization) {
-        throw new Error('Failed to retrieve created organization');
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve created organization',
+        });
       }
 
       return createdOrganization;
@@ -210,7 +220,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden: Admin access required');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden: Admin access required' });
       }
 
       const updatedOrganization = await ctx.prisma.organization.update({
@@ -263,7 +273,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden: Admin access required');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden: Admin access required' });
       }
 
       // Get organization name before deletion for audit log
@@ -316,7 +326,7 @@ export const organizationsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       // Verify the requesting user is either the target user or an admin
       if (ctx.session.user.id !== input.userId && ctx.session.user.role !== 'ADMIN') {
-        throw new Error('Forbidden');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden' });
       }
 
       const organizations = await ctx.prisma.organization.findMany({
@@ -404,7 +414,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden: Admin access required');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden: Admin access required' });
       }
 
       const location = await ctx.prisma.location.create({
@@ -454,7 +464,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden: Admin access required');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden: Admin access required' });
       }
 
       // Use transaction to update locations
@@ -512,7 +522,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden' });
       }
 
       const connections = await ctx.prisma.organizationProviderConnection.findMany({
@@ -584,7 +594,7 @@ export const organizationsRouter = createTRPCRouter({
       const user = await getCurrentUser();
 
       if (!user) {
-        throw new Error('Unauthorized');
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Unauthorized' });
       }
 
       // Verify user has admin access to this organization
@@ -599,7 +609,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Unauthorized');
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Unauthorized' });
       }
 
       // Verify connection belongs to this organization
@@ -611,7 +621,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!existingConnection) {
-        throw new Error('Connection not found');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Connection not found' });
       }
 
       // Update the connection
@@ -669,7 +679,7 @@ export const organizationsRouter = createTRPCRouter({
       const user = await getCurrentUser();
 
       if (!user) {
-        throw new Error('Unauthorized');
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Unauthorized' });
       }
 
       // Verify user has admin access to this organization
@@ -684,7 +694,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Unauthorized');
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Unauthorized' });
       }
 
       // Verify connection belongs to this organization
@@ -696,7 +706,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!existingConnection) {
-        throw new Error('Connection not found');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Connection not found' });
       }
 
       // Check if provider has any active availability with this organization
@@ -712,9 +722,11 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (activeAvailabilities.length > 0) {
-        throw new Error(
-          'Cannot delete connection with active future availability. Please delete all future availability first.'
-        );
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message:
+            'Cannot delete connection with active future availability. Please delete all future availability first.',
+        });
       }
 
       // Delete the connection
@@ -751,7 +763,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden' });
       }
 
       const invitations = await ctx.prisma.providerInvitation.findMany({
@@ -801,7 +813,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden: Admin access required');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden: Admin access required' });
       }
 
       // Check if invitation already exists
@@ -814,7 +826,10 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (existingInvitation) {
-        throw new Error('An invitation for this email already exists');
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'An invitation for this email already exists',
+        });
       }
 
       // Create invitation
@@ -858,7 +873,7 @@ export const organizationsRouter = createTRPCRouter({
       const currentUser = await getCurrentUser();
 
       if (!currentUser) {
-        throw new Error('Unauthorized');
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Unauthorized' });
       }
 
       // Check if user has permission to cancel invitations
@@ -872,7 +887,10 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden: Only organization owners and admins can cancel invitations');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Forbidden: Only organization owners and admins can cancel invitations',
+        });
       }
 
       // Find the invitation
@@ -888,12 +906,15 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!invitation) {
-        throw new Error('Invitation not found');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Invitation not found' });
       }
 
       // Check if invitation can be cancelled
       if (invitation.status !== 'PENDING') {
-        throw new Error('Only pending invitations can be cancelled');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only pending invitations can be cancelled',
+        });
       }
 
       // Update invitation status
@@ -951,7 +972,7 @@ export const organizationsRouter = createTRPCRouter({
       const currentUser = await getCurrentUser();
 
       if (!currentUser) {
-        throw new Error('Unauthorized');
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Unauthorized' });
       }
 
       // Check if user has permission to resend invitations
@@ -965,7 +986,10 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden: Only organization owners and admins can resend invitations');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Forbidden: Only organization owners and admins can resend invitations',
+        });
       }
 
       // Find the invitation
@@ -981,18 +1005,24 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!invitation) {
-        throw new Error('Invitation not found');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Invitation not found' });
       }
 
       // Check if invitation can be resent
       if (invitation.status !== 'PENDING') {
-        throw new Error('Only pending invitations can be resent');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only pending invitations can be resent',
+        });
       }
 
       // Check rate limiting (no more than 1 resend per hour)
       const oneHourAgo = addMilliseconds(nowUTC(), -60 * 60 * 1000);
       if (invitation.lastEmailSentAt && invitation.lastEmailSentAt > oneHourAgo) {
-        throw new Error('Invitation can only be resent once per hour');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Invitation can only be resent once per hour',
+        });
       }
 
       // Generate new token and extend expiry
@@ -1074,7 +1104,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden' });
       }
 
       const members = await ctx.prisma.organizationMembership.findMany({
@@ -1117,7 +1147,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden' });
       }
 
       const invitations = await ctx.prisma.organizationInvitation.findMany({
@@ -1166,14 +1196,17 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden: Admin access required');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden: Admin access required' });
       }
 
       // Call business logic validation
       const validation = await validateMemberInvitation(input);
 
       if (!validation.success) {
-        throw new Error(validation.message);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.message,
+        });
       }
 
       // Check if organization exists and user isn't already a member
@@ -1187,7 +1220,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!organization) {
-        throw new Error('Organization not found');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Organization not found' });
       }
 
       // Check if user is already a member
@@ -1196,7 +1229,10 @@ export const organizationsRouter = createTRPCRouter({
       );
 
       if (existingMembership) {
-        throw new Error('User is already a member of this organization');
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'User is already a member of this organization',
+        });
       }
 
       // Check for existing pending invitation
@@ -1209,7 +1245,10 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (existingInvitation) {
-        throw new Error('Invitation already sent to this email address');
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'Invitation already sent to this email address',
+        });
       }
 
       // Create invitation using business logic data
@@ -1283,7 +1322,10 @@ export const organizationsRouter = createTRPCRouter({
       const validation = await validateInvitationAcceptance(input.token);
 
       if (!validation.success) {
-        throw new Error(validation.message);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.message,
+        });
       }
 
       // Find invitation
@@ -1296,19 +1338,25 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!invitation) {
-        throw new Error('Invalid invitation token');
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid invitation token' });
       }
 
       if (invitation.status !== 'PENDING') {
-        throw new Error(`Invitation has already been ${invitation.status.toLowerCase()}`);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Invitation has already been ${invitation.status.toLowerCase()}`,
+        });
       }
 
       if (invitation.expiresAt < nowUTC()) {
-        throw new Error('Invitation has expired');
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invitation has expired' });
       }
 
       if (invitation.email.toLowerCase() !== validation.data!.currentUserEmail!.toLowerCase()) {
-        throw new Error('This invitation is not for your email address');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'This invitation is not for your email address',
+        });
       }
 
       // Check if user is already a member
@@ -1322,7 +1370,10 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (existingMembership) {
-        throw new Error('You are already a member of this organization');
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'You are already a member of this organization',
+        });
       }
 
       // Create membership and update invitation in transaction
@@ -1377,7 +1428,10 @@ export const organizationsRouter = createTRPCRouter({
       const validation = await validateInvitationRejection(input.token);
 
       if (!validation.success) {
-        throw new Error(validation.message);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.message,
+        });
       }
 
       // Find invitation
@@ -1387,16 +1441,22 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!invitation) {
-        throw new Error('Invalid invitation token');
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid invitation token' });
       }
 
       if (invitation.status !== 'PENDING') {
-        throw new Error(`Invitation has already been ${invitation.status.toLowerCase()}`);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Invitation has already been ${invitation.status.toLowerCase()}`,
+        });
       }
 
       // Security: Verify the invitation is for the current user
       if (invitation.email.toLowerCase() !== ctx.session.user.email?.toLowerCase()) {
-        throw new Error('This invitation is not for your email address');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'This invitation is not for your email address',
+        });
       }
 
       // Update invitation status
@@ -1439,7 +1499,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden: Admin access required');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden: Admin access required' });
       }
 
       // Call business logic validation
@@ -1450,7 +1510,10 @@ export const organizationsRouter = createTRPCRouter({
       );
 
       if (!validation.success) {
-        throw new Error(validation.message);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.message,
+        });
       }
 
       // Get the membership to be modified
@@ -1460,12 +1523,12 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!targetMembership || targetMembership.organizationId !== input.organizationId) {
-        throw new Error('Member not found');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Member not found' });
       }
 
       // Cannot change own role
       if (targetMembership.userId === validation.data!.currentUserId!) {
-        throw new Error('Cannot change your own role');
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot change your own role' });
       }
 
       // Update role
@@ -1508,14 +1571,17 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden: Admin access required');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden: Admin access required' });
       }
 
       // Call business logic validation
       const validation = await validateMemberRemoval(input.organizationId, input.memberId);
 
       if (!validation.success) {
-        throw new Error(validation.message);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.message,
+        });
       }
 
       // Get the membership to be removed
@@ -1525,12 +1591,15 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!targetMembership || targetMembership.organizationId !== input.organizationId) {
-        throw new Error('Member not found');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Member not found' });
       }
 
       // Cannot remove yourself
       if (targetMembership.userId === validation.data!.currentUserId!) {
-        throw new Error('Cannot remove yourself from the organization');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot remove yourself from the organization',
+        });
       }
 
       // Cannot remove the last owner
@@ -1544,7 +1613,10 @@ export const organizationsRouter = createTRPCRouter({
         });
 
         if (ownerCount <= 1) {
-          throw new Error('Cannot remove the last owner. Transfer ownership first.');
+          throw new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message: 'Cannot remove the last owner. Transfer ownership first.',
+          });
         }
       }
 
@@ -1585,7 +1657,7 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!membership) {
-        throw new Error('Forbidden: Admin access required');
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden: Admin access required' });
       }
 
       // Call business logic validation
@@ -1595,7 +1667,10 @@ export const organizationsRouter = createTRPCRouter({
       );
 
       if (!validation.success) {
-        throw new Error(validation.message);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.message,
+        });
       }
 
       // Find the invitation
@@ -1604,11 +1679,14 @@ export const organizationsRouter = createTRPCRouter({
       });
 
       if (!invitation || invitation.organizationId !== input.organizationId) {
-        throw new Error('Invitation not found');
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Invitation not found' });
       }
 
       if (invitation.status !== 'PENDING') {
-        throw new Error('Can only cancel pending invitations');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Can only cancel pending invitations',
+        });
       }
 
       // Cancel invitation

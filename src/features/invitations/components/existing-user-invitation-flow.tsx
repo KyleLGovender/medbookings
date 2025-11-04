@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 
 import { ProviderInvitationStatus } from '@prisma/client';
@@ -276,9 +277,11 @@ export function ExistingUserInvitationFlow({
           <CardHeader className="pb-4 text-center">
             <div className="mx-auto mb-4">
               {invitation.organization.logo ? (
-                <img
+                <Image
                   src={invitation.organization.logo}
                   alt={invitation.organization.name}
+                  width={64}
+                  height={64}
                   className="mx-auto h-16 w-16 rounded-lg border object-cover"
                 />
               ) : (
@@ -427,9 +430,11 @@ export function ExistingUserInvitationFlow({
           <CardHeader className="pb-4 text-center">
             <div className="mx-auto mb-4">
               {invitation.organization.logo ? (
-                <img
+                <Image
                   src={invitation.organization.logo}
                   alt={invitation.organization.name}
+                  width={64}
+                  height={64}
                   className="mx-auto h-16 w-16 rounded-lg border object-cover"
                 />
               ) : (

@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 import { AlertTriangle, Building2, Home, LogOut } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
@@ -114,9 +116,11 @@ export function InvitationErrorState({
       <Card className="w-full max-w-2xl">
         <CardHeader className="pb-4 text-center">
           {invitation?.organization.logo ? (
-            <img
+            <Image
               src={invitation.organization.logo}
               alt={invitation.organization.name}
+              width={64}
+              height={64}
               className="mx-auto mb-4 h-16 w-16 rounded-lg border object-cover opacity-50"
             />
           ) : (

@@ -1,3 +1,4 @@
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { validateAccountDeletion, validateProfileUpdate } from '@/features/profile/lib/actions';
@@ -37,7 +38,10 @@ export const profileRouter = createTRPCRouter({
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'User not found',
+      });
     }
 
     return user;
@@ -53,7 +57,10 @@ export const profileRouter = createTRPCRouter({
     const validation = await validateProfileUpdate(input);
 
     if (!validation.success) {
-      throw new Error(validation.error);
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: validation.error,
+      });
     }
 
     // Single database query with automatic type inference
@@ -122,7 +129,10 @@ export const profileRouter = createTRPCRouter({
       const validation = await validateAccountDeletion();
 
       if (!validation.success) {
-        throw new Error(validation.error);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.error,
+        });
       }
 
       // Single transaction with all database operations and validation
@@ -134,9 +144,11 @@ export const profileRouter = createTRPCRouter({
         });
 
         if (provider) {
-          throw new Error(
-            'Please delete your service provider profile first before deleting your account.'
-          );
+          throw new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message:
+              'Please delete your service provider profile first before deleting your account.',
+          });
         }
 
         // Delete account connections (OAuth)

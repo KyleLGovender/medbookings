@@ -1,6 +1,7 @@
 /**
  * Organization-related email templates
  */
+import env from '@/config/env/server';
 import { nowUTC } from '@/lib/timezone';
 
 interface TemplateData {
@@ -24,7 +25,7 @@ export interface OrganizationRegistrationData {
 export function getOrganizationRegistrationTemplate(
   data: OrganizationRegistrationData
 ): TemplateData {
-  const registrationUrl = `${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}/admin/organizations`;
+  const registrationUrl = `${env.NEXTAUTH_URL || 'https://medbookings.co.za'}/admin/organizations`;
 
   const subject = `New Organization Registration: ${data.organizationName}`;
 
@@ -152,7 +153,7 @@ export interface MemberWelcomeData {
 
 export function getMemberWelcomeTemplate(data: MemberWelcomeData): TemplateData {
   const dashboardUrl =
-    data.dashboardUrl || `${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}/dashboard`;
+    data.dashboardUrl || `${env.NEXTAUTH_URL || 'https://medbookings.co.za'}/dashboard`;
 
   const subject = `Welcome to ${data.organizationName} on MedBookings`;
 

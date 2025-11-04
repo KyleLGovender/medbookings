@@ -47,6 +47,7 @@ export class CalendarErrorBoundary extends Component<
       error: error.message,
       stack: error.stack,
       componentStack: errorInfo.componentStack,
+      // eslint-disable-next-line n/no-process-env -- Client component checking dev mode
       isDevelopment: process.env.NODE_ENV === 'development',
     });
   }
@@ -78,6 +79,7 @@ export class CalendarErrorBoundary extends Component<
               network issue or an unexpected error.
             </p>
 
+            {/* eslint-disable-next-line n/no-process-env -- Client component checking dev mode */}
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="rounded border p-2 text-sm">
                 <summary className="cursor-pointer font-medium">Error Details</summary>

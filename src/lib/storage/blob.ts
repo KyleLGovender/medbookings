@@ -2,6 +2,7 @@
 
 import { del, list, put } from '@vercel/blob';
 
+import env from '@/config/env/server';
 import { logger } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 
@@ -40,7 +41,7 @@ export async function uploadToBlob(
     // Upload to Vercel Blob
     const blob = await put(pathname, file, {
       access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token: env.BLOB_READ_WRITE_TOKEN,
       addRandomSuffix: false, // We already have UUID in filename
     });
 
@@ -69,7 +70,7 @@ export async function uploadTextToBlob(
   try {
     const blob = await put(pathname, content, {
       access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token: env.BLOB_READ_WRITE_TOKEN,
       contentType,
       addRandomSuffix: false,
     });
@@ -92,7 +93,7 @@ export async function uploadTextToBlob(
 export async function deleteFromBlob(url: string): Promise<{ success: boolean; error?: string }> {
   try {
     await del(url, {
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token: env.BLOB_READ_WRITE_TOKEN,
     });
 
     return { success: true };
@@ -117,7 +118,7 @@ export async function listBlobs(prefix?: string): Promise<{
 }> {
   try {
     const result = await list({
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token: env.BLOB_READ_WRITE_TOKEN,
       prefix,
     });
 

@@ -2,6 +2,7 @@ import { createTRPCRouter, publicProcedure } from '@/server/trpc';
 
 export const debugRouter = createTRPCRouter({
   // ✅ Disable debug endpoints in production for security
+  // eslint-disable-next-line n/no-process-env -- Debug router checks NODE_ENV to disable in production
   ...(process.env.NODE_ENV === 'production'
     ? {}
     : {

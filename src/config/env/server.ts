@@ -26,10 +26,25 @@ const env = createEnv({
     SENDGRID_API_KEY: z.string().optional(),
     SENDGRID_FROM_EMAIL: z.string().email().optional(),
 
-    // OPTIONAL - Rate limiting (uses in-memory fallback in development)
-    // NOTE: HIGHLY RECOMMENDED for production to prevent multi-instance issues
-    UPSTASH_REDIS_REST_URL: z.string().url().optional(),
-    UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+    // OPTIONAL - Admin notifications
+    ADMIN_EMAILS: z.string().optional(),
+    ADMIN_NOTIFICATION_EMAIL: z.string().email().optional(),
+
+    // OPTIONAL - Deployment configuration
+    PORT: z.string().optional(),
+    VERCEL_URL: z.string().optional(),
+
+    // REQUIRED in production - Rate limiting across multiple instances
+    // OPTIONAL in development - Can use in-memory fallback
+    // NOTE: Serverless/multi-instance deployments MUST have Redis configured
+    UPSTASH_REDIS_REST_URL:
+      process.env.NODE_ENV === 'production'
+        ? z.string().url('UPSTASH_REDIS_REST_URL is required in production for rate limiting')
+        : z.string().url().optional(),
+    UPSTASH_REDIS_REST_TOKEN:
+      process.env.NODE_ENV === 'production'
+        ? z.string().min(1, 'UPSTASH_REDIS_REST_TOKEN is required in production for rate limiting')
+        : z.string().optional(),
   },
   emptyStringAsUndefined: true,
   // eslint-disable-next-line n/no-process-env

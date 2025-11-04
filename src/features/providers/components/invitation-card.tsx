@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 
 import { ProviderInvitationStatus } from '@prisma/client';
@@ -146,9 +147,11 @@ export function InvitationCard({ invitation, showActions = true }: InvitationCar
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
               {invitation.organization.logo ? (
-                <img
+                <Image
                   src={invitation.organization.logo}
                   alt={invitation.organization.name}
+                  width={48}
+                  height={48}
                   className="h-12 w-12 rounded-lg border object-cover"
                 />
               ) : (

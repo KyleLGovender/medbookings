@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
 
+import env from '@/config/env/server';
 import { nowUTC } from '@/lib/timezone';
 
 /**
@@ -30,7 +31,7 @@ export function generateInvitationEmail(params: {
   invitationToken: string;
   isExistingUser?: boolean;
 }) {
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const baseUrl = env.NEXTAUTH_URL || 'http://localhost:3000';
   const invitationUrl = `${baseUrl}/invitation/${params.invitationToken}`;
 
   const subject = `Invitation to join ${params.organizationName} on MedBookings`;

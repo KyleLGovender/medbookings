@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 import { ProviderStatus, RequirementsValidationStatus } from '@prisma/client';
@@ -287,9 +288,11 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
             {/* Provider Image */}
             {provider?.image && (
               <div className="mb-6 flex justify-start">
-                <img
+                <Image
                   src={provider.image}
                   alt={provider.user?.name || 'Provider'}
+                  width={128}
+                  height={128}
                   className="h-32 w-32 rounded-full border-2 border-gray-200 object-cover dark:border-gray-700"
                 />
               </div>

@@ -87,7 +87,10 @@ export const billingRouter = createTRPCRouter({
       });
 
       if (!subscription) {
-        throw new Error('Subscription not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Subscription not found',
+        });
       }
 
       // ✅ AUTHORIZATION CHECK: Verify ownership (IDOR vulnerability fix)
@@ -120,7 +123,10 @@ export const billingRouter = createTRPCRouter({
       const validation = await validateSubscriptionCreation(input);
 
       if (!validation.success) {
-        throw new Error(validation.error);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.error,
+        });
       }
 
       // Single database query with all necessary relations and validations
@@ -163,7 +169,10 @@ export const billingRouter = createTRPCRouter({
       const validation = await validateSubscriptionUpdate(input);
 
       if (!validation.success) {
-        throw new Error(validation.error);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.error,
+        });
       }
 
       // Prepare update data
@@ -217,7 +226,10 @@ export const billingRouter = createTRPCRouter({
       const validation = await validateSubscriptionCancellation(input);
 
       if (!validation.success) {
-        throw new Error(validation.error);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.error,
+        });
       }
 
       // Single database query - Prisma will validate existence and update atomically

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
+import clientEnv from '@/config/env/client';
 import { logger } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
@@ -77,7 +78,7 @@ export function LocationAutocomplete({
   // Load Google Maps API
   useEffect(() => {
     const loadGoogleMapsAPI = () => {
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+      const apiKey = clientEnv.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
       if (!apiKey) {
         setError('Google Maps API key not configured');

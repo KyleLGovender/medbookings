@@ -1,6 +1,7 @@
 /**
  * Email templates for booking confirmations and notifications
  */
+import env from '@/config/env/server';
 import { nowUTC, parseUTC } from '@/lib/timezone';
 
 interface BookingDetails {
@@ -474,7 +475,7 @@ export function getRequirementUpdateNotificationTemplate(data: {
         </div>
 
         <center>
-          <a href="${process.env.NEXTAUTH_URL}/admin/providers/${data.providerId}" class="cta-button">
+          <a href="${env.NEXTAUTH_URL}/admin/providers/${data.providerId}" class="cta-button">
             Review in Admin Portal
           </a>
         </center>
@@ -512,7 +513,7 @@ Action Required:
 3. Update the requirement status in the admin portal
 4. Add notes if rejection or additional information is needed
 
-Review in Admin Portal: ${process.env.NEXTAUTH_URL}/admin/providers/${data.providerId}
+Review in Admin Portal: ${env.NEXTAUTH_URL}/admin/providers/${data.providerId}
 
 Please process this submission within 24-48 hours.
 
@@ -536,7 +537,7 @@ export interface OrganizationInvitationData {
 }
 
 export function getOrganizationInvitationTemplate(data: OrganizationInvitationData): TemplateData {
-  const invitationUrl = `${process.env.NEXTAUTH_URL || 'https://medbookings.co.za'}/invitation/${data.invitationToken}`;
+  const invitationUrl = `${env.NEXTAUTH_URL || 'https://medbookings.co.za'}/invitation/${data.invitationToken}`;
   const expiryDate = data.expiresAt.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',

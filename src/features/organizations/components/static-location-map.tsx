@@ -7,6 +7,7 @@ import { AlertTriangle, MapPin } from 'lucide-react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import clientEnv from '@/config/env/client';
 
 interface StaticLocationMapProps {
   coordinates: {
@@ -44,7 +45,7 @@ export function StaticLocationMap({ coordinates, locationName }: StaticLocationM
   const [mapError, setMapError] = useState<string | null>(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: clientEnv.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     libraries: ['places'],
   });
 

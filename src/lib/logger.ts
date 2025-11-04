@@ -42,6 +42,7 @@ interface LogEntry {
   timestamp: string;
   context?: Record<string, any>;
   feature?: DebugFeature;
+  requestId?: string;
 }
 
 class Logger {
@@ -72,13 +73,14 @@ class Logger {
    * Format log entry for output
    */
   private formatLog(entry: LogEntry): string {
-    const { level, message, timestamp, context, feature } = entry;
+    const { level, message, timestamp, context, feature, requestId } = entry;
 
     if (this.isDevelopment) {
       // Human-readable format for development
+      const requestIdTag = requestId ? `[${requestId.substring(0, 8)}]` : '';
       const featureTag = feature ? `[${feature.toUpperCase()}]` : '';
       const contextStr = context ? `\n${JSON.stringify(context, null, 2)}` : '';
-      return `[${timestamp}] ${level.toUpperCase()}${featureTag}: ${message}${contextStr}`;
+      return `[${timestamp}]${requestIdTag} ${level.toUpperCase()}${featureTag}: ${message}${contextStr}`;
     }
 
     // JSON format for production (easier to parse)
@@ -128,6 +130,7 @@ class Logger {
    * @param feature - The feature category for filtering (e.g., 'forms', 'maps')
    * @param message - The debug message
    * @param context - Additional context data
+   * @param requestId - Optional request ID for tracing
    *
    * @example
    * // Basic debug log (enabled in dev, disabled in prod)
@@ -137,44 +140,57 @@ class Logger {
    * // In production, enable with: DEBUG_FORMS=true
    * logger.debug('forms', 'Form submitted', { values: sanitizedData });
    */
-  debug(feature: DebugFeature, message: string, context?: Record<string, any>): void {
+  debug(
+    feature: DebugFeature,
+    message: string,
+    context?: Record<string, any>,
+    requestId?: string
+  ): void {
     this.output({
       level: 'debug',
       message,
       timestamp: nowUTC().toISOString(),
       context,
       feature,
+      requestId,
     });
   }
 
   /**
    * Log informational message (development only)
    */
-  info(message: string, context?: Record<string, any>): void {
+  info(message: string, context?: Record<string, any>, requestId?: string): void {
     this.output({
       level: 'info',
       message,
       timestamp: nowUTC().toISOString(),
       context,
+      requestId,
     });
   }
 
   /**
    * Log warning message
    */
-  warn(message: string, context?: Record<string, any>): void {
+  warn(message: string, context?: Record<string, any>, requestId?: string): void {
     this.output({
       level: 'warn',
       message,
       timestamp: nowUTC().toISOString(),
       context,
+      requestId,
     });
   }
 
   /**
    * Log error message
    */
-  error(message: string, error?: Error | unknown, context?: Record<string, any>): void {
+  error(
+    message: string,
+    error?: Error | unknown,
+    context?: Record<string, any>,
+    requestId?: string
+  ): void {
     const errorContext =
       error instanceof Error
         ? {
@@ -189,6 +205,7 @@ class Logger {
       message,
       timestamp: nowUTC().toISOString(),
       context: errorContext,
+      requestId,
     });
   }
 
@@ -200,7 +217,7 @@ class Logger {
    * - Admin actions
    * - Data modifications
    */
-  audit(message: string, context?: Record<string, any>): void {
+  audit(message: string, context?: Record<string, any>, requestId?: string): void {
     this.output({
       level: 'audit',
       message,
@@ -209,6 +226,7 @@ class Logger {
         ...context,
         environment: process.env.NODE_ENV,
       },
+      requestId,
     });
   }
 }

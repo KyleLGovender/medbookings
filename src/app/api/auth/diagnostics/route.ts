@@ -1,3 +1,4 @@
+/* eslint-disable n/no-process-env -- Diagnostics endpoint explicitly checks process.env */
 import { NextResponse } from 'next/server';
 
 import { logger } from '@/lib/logger';

@@ -17,7 +17,8 @@ import { nowUTC } from '@/lib/timezone';
 
 // Initialize Redis client from environment variables
 // In development without Upstash, this will be undefined and we'll use in-memory fallback
-let redis: Redis | undefined;
+// Export for health checks and other utilities
+export let redis: Redis | undefined;
 
 try {
   // Only initialize if env vars are present
@@ -31,11 +32,18 @@ try {
   logger.warn('Failed to initialize Upstash Redis, using in-memory rate limiting', { error });
 }
 
-// ✅ Warn if Redis is not configured in production (checked at module load time)
+// ✅ FAIL HARD if Redis is not configured in production (checked at module load time)
+// This prevents production deployment without proper rate limiting
 if (!redis && process.env.NODE_ENV === 'production' && !process.env.NEXT_PHASE) {
-  logger.error(
-    'CRITICAL: UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required in production for proper rate limiting across multiple instances'
-  );
+  const errorMessage =
+    'CRITICAL: UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required in production. ' +
+    'Rate limiting CANNOT work across multiple serverless instances without Redis. ' +
+    'Configure Upstash Redis at https://console.upstash.com/redis';
+
+  logger.error(errorMessage);
+
+  // BLOCK DEPLOYMENT: Throw error to prevent app from starting
+  throw new Error(errorMessage);
 }
 
 /**
@@ -127,40 +135,8 @@ function createInMemoryRateLimit(
   maxAttempts: number,
   windowMs: number
 ): { limit: (identifier: string) => Promise<RateLimitResult> } {
-  // ⚠️ FAIL-OPEN WITH AGGRESSIVE LOGGING: Allow operation but log heavily
-  // This prevents complete application failure in production without Redis,
-  // but still provides security through detailed audit trails
-  if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PHASE) {
-    logger.error(
-      'CRITICAL SECURITY WARNING: Using in-memory rate limiting in production. ' +
-        'This ONLY works for single-instance deployments. ' +
-        'For multi-instance/serverless deployments, configure Upstash Redis immediately: ' +
-        'Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables. ' +
-        'See: https://console.upstash.com/redis'
-    );
-
-    return {
-      limit: async (identifier: string) => {
-        // Log EVERY rate limit check in production to detect abuse
-        logger.warn('Production in-memory rate limit check (UNSAFE FOR MULTI-INSTANCE)', {
-          identifier,
-          timestamp: nowUTC().toISOString(),
-          maxAttempts,
-          windowMs,
-          warning: 'Rate limiting may be ineffective across multiple instances',
-        });
-
-        // Allow operation but track for audit purposes
-        return {
-          success: true, // FAIL-OPEN: Allow with aggressive logging
-          limit: maxAttempts,
-          remaining: maxAttempts,
-          reset: nowUTC().getTime() + windowMs,
-          pending: Promise.resolve(),
-        };
-      },
-    };
-  }
+  // NOTE: This function should only be called in development/test environments
+  // Production deployments are now blocked without Redis (see startup check above)
 
   const attempts = new Map<string, InMemoryRecord>();
 

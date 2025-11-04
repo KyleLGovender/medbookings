@@ -1,3 +1,4 @@
+/* eslint-disable n/no-process-env -- Error handler needs process.env for fallback URL */
 import { NextRequest, NextResponse } from 'next/server';
 
 import { logger } from '@/lib/logger';

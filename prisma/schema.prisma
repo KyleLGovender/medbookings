@@ -8,39 +8,40 @@ datasource db {
 }
 
 model User {
-  id                       String                          @id @default(cuid())
-  name                     String?
-  email                    String?                         @unique
-  emailVerified            DateTime?
-  phone                    String?
-  phoneVerified            DateTime?
-  whatsapp                 String?
-  whatsappVerified         DateTime?
-  password                 String?
-  passwordMigratedAt       DateTime?
+  id                        String                          @id @default(cuid())
+  name                      String?
+  email                     String?                         @unique
+  emailVerified             DateTime?
+  phone                     String?
+  phoneVerified             DateTime?
+  whatsapp                  String?
+  whatsappVerified          DateTime?
+  password                  String?
+  passwordMigratedAt        DateTime?
   passwordMigrationDeadline DateTime? // Deadline for SHA-256 to bcrypt migration (90 days from user creation)
-  image                    String?
-  role                     UserRole                        @default(USER)
-  createdAt                DateTime                        @default(now())
-  updatedAt                DateTime                        @updatedAt
-  accountLockedUntil       DateTime?
-  accounts                 Account[]
-  availabilitiesAccepted   Availability[]                  @relation("AvailabilityAccepter")
-  availabilitiesCreated    Availability[]
-  bookingsAsClient         Booking[]                       @relation("BookingClient")
-  bookingsConfirmed        Booking[]                       @relation("BookingConfirmer")
-  bookingsCreated          Booking[]                       @relation("BookingCreator")
-  communicationPreferences CommunicationPreference[]
-  LoginAttempt             LoginAttempt[]
-  organizationsApproved    Organization[]                  @relation("OrganizationApprovals")
-  sentInvitations          OrganizationInvitation[]        @relation("SentInvitations")
-  organizationMemberships  OrganizationMembership[]
-  membershipHistoryChanges OrganizationMembershipHistory[]
-  providersApproved        Provider[]                      @relation("ProviderApprovals")
-  provider                 Provider?
-  sentProviderInvitations  ProviderInvitation[]            @relation("ProviderInvitationsSent")
-  validatedRequirements    RequirementSubmission[]         @relation("ValidatedBy")
-  reviews                  Review[]
+  image                     String?
+  role                      UserRole                        @default(USER)
+  createdAt                 DateTime                        @default(now())
+  updatedAt                 DateTime                        @updatedAt
+  accountLockedUntil        DateTime?
+  accounts                  Account[]
+  availabilitiesAccepted    Availability[]                  @relation("AvailabilityAccepter")
+  availabilitiesCreated     Availability[]
+  bookingsAsClient          Booking[]                       @relation("BookingClient")
+  bookingsConfirmed         Booking[]                       @relation("BookingConfirmer")
+  bookingsCreated           Booking[]                       @relation("BookingCreator")
+  communicationPreferences  CommunicationPreference[]
+  LoginAttempt              LoginAttempt[]
+  organizationsApproved     Organization[]                  @relation("OrganizationApprovals")
+  sentInvitations           OrganizationInvitation[]        @relation("SentInvitations")
+  organizationMemberships   OrganizationMembership[]
+  membershipHistoryChanges  OrganizationMembershipHistory[]
+  providersApproved         Provider[]                      @relation("ProviderApprovals")
+  provider                  Provider?
+  sentProviderInvitations   ProviderInvitation[]            @relation("ProviderInvitationsSent")
+  validatedRequirements     RequirementSubmission[]         @relation("ValidatedBy")
+  reviews                   Review[]
+  passwordResetTokens       PasswordResetToken[]            @relation("PasswordResetTokens")
 }
 
 model Account {
@@ -59,6 +60,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId]) // For account lookup and deletion by user
 }
 
 model ProviderType {
@@ -163,6 +165,7 @@ model Organization {
   subscriptions       Subscription[]
 
   @@index([name])
+  @@index([status]) // For admin filtering by approval status
 }
 
 model OrganizationInvitation {
@@ -332,6 +335,9 @@ model Subscription {
   usageRecords             UsageRecord[]
 
   @@index([organizationId, startDate])
+  @@index([providerId]) // For provider subscription lookups
+  @@index([locationId]) // For location subscription lookups
+  @@index([status]) // For filtering by subscription status
 }
 
 model SubscriptionPlan {
@@ -433,6 +439,8 @@ model RequirementSubmission {
   validatedBy       User?                        @relation("ValidatedBy", fields: [validatedById], references: [id])
 
   @@unique([requirementTypeId, providerId])
+  @@index([providerId]) // For provider requirement lookups
+  @@index([status]) // For filtering by validation status
 }
 
 model Service {
@@ -517,6 +525,7 @@ model Availability {
   @@index([connectionId])
   @@index([billingEntity, organizationId])
   @@index([seriesId])
+  @@index([status]) // For standalone status filtering
 }
 
 model CalculatedAvailabilitySlot {
@@ -752,12 +761,13 @@ model EmailVerificationToken {
 }
 
 model PasswordResetToken {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  token     String   @unique
+  token     String    @unique
   expires   DateTime
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   usedAt    DateTime? // Track if token has been used
+  user      User      @relation("PasswordResetTokens", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([userId])

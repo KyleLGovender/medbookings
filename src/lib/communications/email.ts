@@ -3,6 +3,7 @@
  */
 import sgMail from '@sendgrid/mail';
 
+import env from '@/config/env/server';
 import { logger, sanitizeEmail } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 
@@ -15,8 +16,8 @@ interface EmailData {
 }
 
 // Initialize SendGrid if API key is available
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+if (env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(env.SENDGRID_API_KEY);
 }
 
 /**
@@ -25,7 +26,7 @@ if (process.env.SENDGRID_API_KEY) {
 export async function sendEmail(emailData: EmailData): Promise<void> {
   try {
     // Check if SendGrid is configured
-    if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
+    if (!env.SENDGRID_API_KEY || !env.SENDGRID_FROM_EMAIL) {
       logger.warn('SendGrid not configured, logging email instead', {
         to: sanitizeEmail(emailData.to),
         subject: emailData.subject,
@@ -36,14 +37,14 @@ export async function sendEmail(emailData: EmailData): Promise<void> {
 
     logger.info('Attempting to send email via SendGrid', {
       to: sanitizeEmail(emailData.to),
-      from: sanitizeEmail(emailData.from || process.env.SENDGRID_FROM_EMAIL || ''),
+      from: sanitizeEmail(emailData.from || env.SENDGRID_FROM_EMAIL || ''),
       subject: emailData.subject,
       timestamp: nowUTC().toISOString(),
     });
 
     const msg = {
       to: emailData.to,
-      from: emailData.from || process.env.SENDGRID_FROM_EMAIL!,
+      from: emailData.from || env.SENDGRID_FROM_EMAIL!,
       subject: emailData.subject,
       html: emailData.html,
       text: emailData.text || '', // SendGrid will auto-generate if not provided
@@ -137,9 +138,7 @@ export async function sendAdminNotificationEmail(emailTemplate: {
 }): Promise<void> {
   // Get admin email from environment or use default
   const adminEmail =
-    process.env.ADMIN_NOTIFICATION_EMAIL ||
-    process.env.SENDGRID_FROM_EMAIL ||
-    'admin@medbookings.com';
+    env.ADMIN_NOTIFICATION_EMAIL || env.SENDGRID_FROM_EMAIL || 'admin@medbookings.com';
 
   await sendEmail({
     to: adminEmail,
@@ -157,7 +156,7 @@ export async function sendEmailVerification(
   verificationToken: string,
   userName?: string
 ): Promise<void> {
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const baseUrl = env.NEXTAUTH_URL || 'http://localhost:3000';
   const verificationUrl = `${baseUrl}/api/auth/verify-email?token=${verificationToken}`;
 
   const subject = 'Verify Your Email Address - MedBookings';

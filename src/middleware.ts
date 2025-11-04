@@ -9,9 +9,11 @@ import type { NextRequest } from 'next/server';
 
 import { type JWT, getToken } from 'next-auth/jwt';
 import { withAuth } from 'next-auth/middleware';
+import { v4 as uuidv4 } from 'uuid';
 
 import { createAuditLog } from '@/lib/audit';
 import { logger, sanitizeEmail } from '@/lib/logger';
+import { prisma } from '@/lib/prisma';
 import { fromTimestamp, nowUTC, toISOStringUTC } from '@/lib/timezone';
 
 /**
@@ -113,9 +115,74 @@ async function checkRoutePermissions(pathname: string, token: JWT): Promise<bool
     return hasRole(token.role as string, ['ADMIN', 'SUPER_ADMIN']);
   }
 
-  // Check organization routes (admin only)
+  // Check organization routes - membership validation
   if (pathname.startsWith('/organizations')) {
-    return hasRole(token.role as string, ['ADMIN', 'SUPER_ADMIN']);
+    // Super admins can access all organizations
+    if (token.role === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    // /organizations/new route - only admins can create organizations
+    if (pathname === '/organizations/new' || pathname === '/organizations/new/') {
+      return hasRole(token.role as string, ['ADMIN', 'SUPER_ADMIN']);
+    }
+
+    // Extract organization ID from path: /organizations/[id] or /organizations/[id]/...
+    const orgIdMatch = pathname.match(/^\/organizations\/([^\/]+)/);
+
+    if (!orgIdMatch) {
+      // Path doesn't match expected pattern, deny access
+      logger.warn('Invalid organization route pattern', {
+        pathname,
+        userId: token.sub,
+      });
+      return false;
+    }
+
+    const organizationId = orgIdMatch[1];
+    const userId = token.sub;
+
+    if (!userId) {
+      return false;
+    }
+
+    // Check if user is an active member of the organization
+    try {
+      const membership = await prisma.organizationMembership.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId,
+            userId,
+          },
+        },
+        select: {
+          status: true,
+          role: true,
+        },
+      });
+
+      if (!membership || membership.status !== 'ACTIVE') {
+        logger.warn('Unauthorized organization access attempt', {
+          userId,
+          organizationId,
+          pathname,
+          membershipStatus: membership?.status || 'NOT_FOUND',
+        });
+        return false;
+      }
+
+      // User is an active member, grant access
+      return true;
+    } catch (error) {
+      logger.error('Error checking organization membership', {
+        error,
+        userId,
+        organizationId,
+        pathname,
+      });
+      // Fail closed - deny access on error
+      return false;
+    }
   }
 
   // Check provider routes (verified users only)
@@ -152,12 +219,18 @@ async function checkRoutePermissions(pathname: string, token: JWT): Promise<bool
 
 export default withAuth(
   async (req: NextRequest) => {
+    // Generate unique request ID for tracing
+    // Check if request already has an ID (from external source like load balancer)
+    const requestId = req.headers.get('x-request-id') || uuidv4();
+
     const token = await getToken({ req });
     const { pathname } = req.nextUrl;
 
     // Allow public access to provider search page
     if (pathname === '/providers') {
-      return NextResponse.next();
+      const response = NextResponse.next();
+      response.headers.set('x-request-id', requestId);
+      return response;
     }
 
     if (!token) {
@@ -255,6 +328,7 @@ export default withAuth(
 
     // Add permission context to headers for downstream use
     const response = NextResponse.next();
+    response.headers.set('x-request-id', requestId);
     response.headers.set('x-user-role', String(token.role) || 'USER');
     response.headers.set('x-user-id', token.sub || '');
     response.headers.set('x-email-verified', String(isEmailVerified(token.emailVerified ?? null)));

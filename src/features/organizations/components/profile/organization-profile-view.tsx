@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 import {
@@ -135,9 +136,11 @@ export function OrganizationProfileView({ organizationId, userId }: Organization
         <div className="space-y-6">
           {organization.logo && (
             <div className="flex justify-start">
-              <img
+              <Image
                 src={organization.logo}
                 alt={organization.name}
+                width={128}
+                height={128}
                 className="h-32 w-32 rounded-lg object-cover"
               />
             </div>

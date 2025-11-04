@@ -5,6 +5,7 @@ import {
   ProviderInvitationStatus,
   ProviderStatus,
 } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { sendProviderWhatsappConfirmation } from '@/features/communications/lib/server-helper';
@@ -16,6 +17,7 @@ import {
   regulatoryRequirementsSchema,
   servicesSchema,
 } from '@/features/providers/types/schemas';
+import { createAuditLog } from '@/lib/audit';
 import { logger, sanitizeEmail, sanitizePhone } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 import {
@@ -82,7 +84,10 @@ export const providersRouter = createTRPCRouter({
     });
 
     if (!provider) {
-      throw new Error('Provider not found');
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Provider not found',
+      });
     }
 
     // ✅ AUTHORIZATION: Remove PHI for non-owners (IDOR vulnerability fix)
@@ -456,14 +461,19 @@ export const providersRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user?.id) {
-        throw new Error('Unauthorized');
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Unauthorized',
+        });
       }
 
       // Check if user's email is verified
       if (!ctx.session.user.emailVerified) {
-        throw new Error(
-          'Email verification required. Please verify your email address before registering as a healthcare provider.'
-        );
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message:
+            'Email verification required. Please verify your email address before registering as a healthcare provider.',
+        });
       }
 
       const userId = ctx.session.user.id;
@@ -473,7 +483,10 @@ export const providersRouter = createTRPCRouter({
 
       // Basic validation
       if (input.providerTypeIds.length === 0) {
-        throw new Error('At least one provider type must be selected');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'At least one provider type must be selected',
+        });
       }
 
       // Validate email (required and not a default value)
@@ -482,20 +495,29 @@ export const providersRouter = createTRPCRouter({
         input.basicInfo.email === 'default@example.com' ||
         input.basicInfo.email.trim() === ''
       ) {
-        throw new Error('Valid email address is required');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Valid email address is required',
+        });
       }
 
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(input.basicInfo.email)) {
-        throw new Error('Invalid email format');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Invalid email format',
+        });
       }
 
       // Validate WhatsApp format if provided (E.164 format: +[country code][number])
       if (input.basicInfo.whatsapp) {
         const whatsappRegex = /^\+[1-9]\d{1,14}$/;
         if (!whatsappRegex.test(input.basicInfo.whatsapp)) {
-          throw new Error('Invalid WhatsApp number format. Use E.164 format (e.g., +27821234567)');
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Invalid WhatsApp number format. Use E.164 format (e.g., +27821234567)',
+          });
         }
       }
 
@@ -509,7 +531,10 @@ export const providersRouter = createTRPCRouter({
       if (existingProviderTypes.length !== input.providerTypeIds.length) {
         const foundTypeIds = existingProviderTypes.map((t) => t.id);
         const missingTypes = input.providerTypeIds.filter((id) => !foundTypeIds.includes(id));
-        throw new Error(`Provider types not found: ${missingTypes.join(', ')}`);
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Provider types not found: ${missingTypes.join(', ')}`,
+        });
       }
 
       // Validate that all services exist
@@ -523,7 +548,10 @@ export const providersRouter = createTRPCRouter({
         if (existingServices.length !== services.length) {
           const foundServiceIds = existingServices.map((s) => s.id);
           const missingServices = services.filter((id) => !foundServiceIds.includes(id));
-          throw new Error(`Services not found: ${missingServices.join(', ')}`);
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Services not found: ${missingServices.join(', ')}`,
+          });
         }
       }
 
@@ -688,7 +716,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!currentProvider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Build update data object only with changed fields
@@ -798,7 +829,10 @@ export const providersRouter = createTRPCRouter({
       const userId = ctx.session?.user?.id;
 
       if (!userId) {
-        throw new Error('You must be logged in to delete a provider');
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to delete a provider',
+        });
       }
 
       // Get the provider to check ownership and relations
@@ -813,7 +847,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Check if user is authorized (either the owner or an admin)
@@ -823,8 +860,65 @@ export const providersRouter = createTRPCRouter({
         ctx.session.user.role === 'SUPER_ADMIN';
 
       if (!isAuthorized) {
-        throw new Error('You are not authorized to delete this provider');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You are not authorized to delete this provider',
+        });
       }
+
+      // Check for future bookings - prevent deletion if any exist
+      const futureBookings = await ctx.prisma.booking.findFirst({
+        where: {
+          slot: {
+            startTime: { gte: nowUTC() },
+            availability: {
+              providerId: provider.id,
+            },
+          },
+          status: { in: ['PENDING', 'CONFIRMED'] },
+        },
+        select: {
+          id: true,
+          status: true,
+          slot: {
+            select: {
+              startTime: true,
+            },
+          },
+        },
+      });
+
+      if (futureBookings) {
+        logger.warn('Provider deletion blocked due to future bookings', {
+          providerId: provider.id,
+          providerName: provider.name,
+          futureBookingId: futureBookings.id,
+          bookingStartTime: futureBookings.slot?.startTime,
+          requestedBy: userId,
+        });
+
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message:
+            'Cannot delete provider with future bookings. Please cancel or complete all upcoming appointments first.',
+        });
+      }
+
+      // Audit log the deletion attempt
+      await createAuditLog({
+        action: 'Provider deleted',
+        category: 'ADMIN_ACTION',
+        userId: ctx.session.user.id,
+        userEmail: sanitizeEmail(ctx.session.user.email || 'unknown'),
+        resource: 'Provider',
+        resourceId: provider.id,
+        metadata: {
+          providerId: provider.id,
+          providerName: provider.name,
+          providerUserId: provider.userId,
+          deletedByRole: ctx.session.user.role,
+        },
+      });
 
       // Delete all related records in the correct order using transaction
       await ctx.prisma.$transaction(async (tx) => {
@@ -947,7 +1041,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!providerType) {
-        throw new Error(`Provider type with ID ${providerTypeId} not found`);
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Provider type with ID ${providerTypeId} not found`,
+        });
       }
 
       // If providerId is provided, fetch the provider's service configurations
@@ -1186,7 +1283,10 @@ export const providersRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Safety check: only proceed if availableServices is provided and not empty
       if (!input.availableServices || input.availableServices.length === 0) {
-        throw new Error('No services provided. At least one service must be selected.');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'No services provided. At least one service must be selected.',
+        });
       }
 
       const serviceIds = input.availableServices;
@@ -1201,7 +1301,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!currentProvider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Update the provider's services and configs in a transaction
@@ -1403,7 +1506,10 @@ export const providersRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user?.id) {
-        throw new Error('Unauthorized');
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Unauthorized',
+        });
       }
 
       const userId = ctx.session.user.id;
@@ -1417,12 +1523,18 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!currentProvider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Check authorization
       if (currentProvider.userId !== userId) {
-        throw new Error('Unauthorized to update this provider');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Unauthorized to update this provider',
+        });
       }
 
       // Process requirements data
@@ -1528,7 +1640,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!updatedProvider) {
-        throw new Error('Failed to retrieve updated provider data');
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to retrieve updated provider data',
+        });
       }
 
       return {
@@ -1559,7 +1674,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Service provider profile not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Service provider profile not found',
+        });
       }
 
       // Build where clause
@@ -1613,7 +1731,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Service provider profile not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Service provider profile not found',
+        });
       }
 
       // Find the connection
@@ -1630,20 +1751,32 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!connection) {
-        throw new Error('Connection not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Connection not found',
+        });
       }
 
       // Validate status transition
       if (connection.status === 'REJECTED') {
-        throw new Error('Cannot modify a rejected connection');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot modify a rejected connection',
+        });
       }
 
       if (input.status === 'SUSPENDED' && connection.status !== 'ACCEPTED') {
-        throw new Error('Only active connections can be suspended');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only active connections can be suspended',
+        });
       }
 
       if (input.status === 'ACCEPTED' && connection.status !== 'SUSPENDED') {
-        throw new Error('Only suspended connections can be reactivated');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only suspended connections can be reactivated',
+        });
       }
 
       // Update connection status
@@ -1696,7 +1829,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Service provider profile not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Service provider profile not found',
+        });
       }
 
       // Find the connection
@@ -1713,7 +1849,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!connection) {
-        throw new Error('Connection not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Connection not found',
+        });
       }
 
       // Check if there are any active availabilities or bookings
@@ -1725,9 +1864,11 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (activeAvailabilities > 0) {
-        throw new Error(
-          'Cannot delete connection with active future availabilities. Please remove or transfer them first.'
-        );
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message:
+            'Cannot delete connection with active future availabilities. Please remove or transfer them first.',
+        });
       }
 
       // Delete the connection
@@ -1756,7 +1897,10 @@ export const providersRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       if (!ctx.session.user.email) {
-        throw new Error('User email is required to check for invitations');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'User email is required to check for invitations',
+        });
       }
 
       // Build where clause
@@ -1854,7 +1998,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!invitation) {
-        throw new Error('Invalid invitation token');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Invalid invitation token',
+        });
       }
 
       return { invitation };
@@ -1887,7 +2034,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!invitation) {
-        throw new Error('Invalid or expired invitation token');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Invalid or expired invitation token',
+        });
       }
 
       // Check if invitation has expired
@@ -1897,17 +2047,26 @@ export const providersRouter = createTRPCRouter({
           data: { status: 'EXPIRED' },
         });
 
-        throw new Error('This invitation has expired');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This invitation has expired',
+        });
       }
 
       // Check if invitation is still pending
       if (invitation.status !== 'PENDING') {
-        throw new Error('This invitation has already been responded to');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This invitation has already been responded to',
+        });
       }
 
       // Verify the invitation is for the current user's email
       if (invitation.email !== ctx.session.user.email) {
-        throw new Error('This invitation is not for your email address');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'This invitation is not for your email address',
+        });
       }
 
       // Find service provider for the current user
@@ -1916,9 +2075,11 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error(
-          'You must complete your service provider registration before accepting invitations'
-        );
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message:
+            'You must complete your service provider registration before accepting invitations',
+        });
       }
 
       if (input.action === 'reject') {
@@ -1954,7 +2115,10 @@ export const providersRouter = createTRPCRouter({
         });
 
         if (existingConnection) {
-          throw new Error('You are already connected to this organization');
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'You are already connected to this organization',
+          });
         }
 
         // Start transaction to create connection and update invitation
@@ -2003,7 +2167,10 @@ export const providersRouter = createTRPCRouter({
         };
       }
 
-      throw new Error('Invalid action');
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Invalid action',
+      });
     }),
 
   // ============================================================================
@@ -2047,7 +2214,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Return the raw data - business logic will be handled by the server action
@@ -2169,7 +2339,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider || provider.userId !== ctx.session.user.id) {
-        throw new Error('Unauthorized');
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Unauthorized',
+        });
       }
 
       // Update provider business settings
@@ -2240,7 +2413,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Collect all unique requirement types from all provider types
@@ -2293,7 +2469,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Update provider information
@@ -2342,7 +2521,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Convert the channels object to an array of enabled channels
@@ -2393,17 +2575,26 @@ export const providersRouter = createTRPCRouter({
       }
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Check authorization
       const isAuthorized = provider.userId === userId || isAdmin;
       if (!isAuthorized) {
-        throw new Error('You are not authorized to suspend this provider');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You are not authorized to suspend this provider',
+        });
       }
 
       if (provider.status !== 'ACTIVE' && provider.status !== 'APPROVED') {
-        throw new Error('Only active or approved providers can be suspended');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only active or approved providers can be suspended',
+        });
       }
 
       const updated = await ctx.prisma.provider.update({
@@ -2452,17 +2643,26 @@ export const providersRouter = createTRPCRouter({
       }
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Check authorization
       const isAuthorized = provider.userId === userId || isAdmin;
       if (!isAuthorized) {
-        throw new Error('You are not authorized to unsuspend this provider');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You are not authorized to unsuspend this provider',
+        });
       }
 
       if (provider.status !== 'SUSPENDED') {
-        throw new Error('Only suspended providers can be reactivated');
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only suspended providers can be reactivated',
+        });
       }
 
       // Check if provider has pending regulatory requirement updates (only applies to self-unsuspend)
@@ -2472,9 +2672,11 @@ export const providersRouter = createTRPCRouter({
         );
 
         if (hasPendingRequirements) {
-          throw new Error(
-            'You cannot unsuspend your account while you have pending regulatory requirement updates. Please wait for admin approval or contact support.'
-          );
+          throw new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message:
+              'You cannot unsuspend your account while you have pending regulatory requirement updates. Please wait for admin approval or contact support.',
+          });
         }
       }
 
@@ -2521,7 +2723,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       // Check if this is an existing submission or new one
@@ -2571,7 +2776,10 @@ export const providersRouter = createTRPCRouter({
         });
 
         if (!requirementType) {
-          throw new Error('Requirement type not found');
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Requirement type not found',
+          });
         }
 
         // Create new submission
@@ -2666,13 +2874,19 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Provider not found or unauthorized');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found or unauthorized',
+        });
       }
 
       // Get the first provider type (for now)
       const providerTypeId = provider.typeAssignments[0]?.providerTypeId;
       if (!providerTypeId) {
-        throw new Error('Provider must have a type assignment');
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'Provider must have a type assignment',
+        });
       }
 
       const service = await ctx.prisma.service.create({
@@ -2718,7 +2932,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!service) {
-        throw new Error('Service not found or unauthorized');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Service not found or unauthorized',
+        });
       }
 
       const updated = await ctx.prisma.service.update({
@@ -2753,7 +2970,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!service) {
-        throw new Error('Service not found or unauthorized');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Service not found or unauthorized',
+        });
       }
 
       await ctx.prisma.service.delete({
@@ -2798,7 +3018,10 @@ export const providersRouter = createTRPCRouter({
       });
 
       if (!provider) {
-        throw new Error('Provider not found');
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider not found',
+        });
       }
 
       const isAuthorized =
@@ -2807,7 +3030,10 @@ export const providersRouter = createTRPCRouter({
         ctx.session.user.role === 'SUPER_ADMIN';
 
       if (!isAuthorized) {
-        throw new Error('Not authorized to view provider stats');
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Not authorized to view provider stats',
+        });
       }
 
       // Get total bookings count

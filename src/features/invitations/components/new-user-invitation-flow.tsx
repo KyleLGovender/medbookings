@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 
 import { format, formatDistanceToNow } from 'date-fns';
@@ -93,8 +94,10 @@ export function NewUserInvitationFlow({ invitation, token }: NewUserInvitationFl
           <div className="space-y-4 text-center">
             <div className="mx-auto mb-4">
               {invitation.organization.logo ? (
-                <img
+                <Image
                   src={invitation.organization.logo}
+                  width={80}
+                  height={80}
                   alt={invitation.organization.name}
                   className="mx-auto h-20 w-20 rounded-lg border object-cover"
                 />
