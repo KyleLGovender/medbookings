@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { useProviderByUserId } from '@/features/providers/hooks/use-provider-by-user-id';
+import { useProviderByUserId } from '@/hooks/use-provider-by-user-id';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';

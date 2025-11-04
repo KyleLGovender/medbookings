@@ -45,7 +45,7 @@ import {
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import { CustomRecurrenceData, RecurrenceOption } from '@/features/calendar/types/types';
-import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
+import { useOrganizationLocations } from '@/hooks/use-organization-locations';
 import { useToast } from '@/hooks/use-toast';
 import { addMilliseconds, cloneDate, nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterInputs } from '@/utils/api';

@@ -6,7 +6,7 @@ import { PostRegistrationInvitationHandler } from '@/features/invitations/compon
 import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
 import { ProfileClient } from '@/features/profile/components/profile-client';
 import { useProfile } from '@/features/profile/hooks/use-profile';
-import { useProviderByUserId } from '@/features/providers/hooks/use-provider-by-user-id';
+import { useProviderByUserId } from '@/hooks/use-provider-by-user-id';
 
 export function ProfileClientPage() {
   // Fetch the user profile

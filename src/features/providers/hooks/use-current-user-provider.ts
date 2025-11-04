@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 
-import { useProviderByUserId } from './use-provider-by-user-id';
+import { useProviderByUserId } from '@/hooks/use-provider-by-user-id';
 
 /**
  * Hook to get the current user's provider profile
