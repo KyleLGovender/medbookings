@@ -87,6 +87,8 @@ Before deploying, ensure you have:
 
 ## Environment Variables
 
+> 📘 **Complete Reference**: See [ENVIRONMENT-VARIABLES.md](/docs/setup/ENVIRONMENT-VARIABLES.md) for detailed descriptions, credential setup instructions, and validation information.
+
 Configure these in: **Vercel Dashboard → Project → Settings → Environment Variables**
 
 ### Required for All Environments
@@ -159,7 +161,7 @@ UPSTASH_REDIS_REST_TOKEN=your-redis-token
 
 # REQUIRED for production rate limiting
 # Setup: https://console.upstash.com/redis
-# See: /docs/compliance/DEPLOYMENT.md for setup instructions
+# See: /docs/deployment/UPSTASH-REDIS-SETUP.md for setup instructions
 
 # ─────────────────────────────────────────────────────────
 # OPTIONAL - Additional Services
@@ -365,7 +367,7 @@ Rate limiting is configured in:
 - Anonymous: 10 requests/minute
 - Authenticated: 50 requests/minute
 
-For details, see `/docs/compliance/DEPLOYMENT.md`
+For details, see `/docs/deployment/UPSTASH-REDIS-SETUP.md`
 
 ### Environment Variable Security
 
@@ -400,7 +402,7 @@ If you accidentally commit `.env`:
 - ✅ Timezone handling (UTC storage, SAST display)
 - ✅ Session timeout (30 minutes)
 
-For complete compliance requirements, see `/docs/compliance/DEPLOYMENT.md`
+For complete compliance requirements, see `/docs/deployment/SECURITY-CHECKLIST.md`
 
 ---
 
@@ -672,7 +674,7 @@ Error: Failed to upload file
 For deployment issues or questions:
 - Check [Issues](https://github.com/KyleLGovender/medbookings/issues)
 - Review [CLAUDE.md](/CLAUDE.md) for architecture details
-- See [DEPLOYMENT.md](/docs/compliance/DEPLOYMENT.md) for security requirements
+- See [SECURITY-CHECKLIST.md](/docs/deployment/SECURITY-CHECKLIST.md) for security requirements
 
 ---
 

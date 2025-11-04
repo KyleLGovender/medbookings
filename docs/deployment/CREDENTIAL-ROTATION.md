@@ -430,7 +430,7 @@ Maintain a record of all credential rotations:
 
 - [Security Checklist](/docs/deployment/SECURITY-CHECKLIST.md)
 - [Vercel Deployment Guide](/docs/deployment/VERCEL-DEPLOYMENT.md)
-- [Environment Variables Reference](/docs/deployment/ENVIRONMENT-VARIABLES.md)
+- [Environment Variables Reference](/docs/setup/ENVIRONMENT-VARIABLES.md)
 
 ---
 

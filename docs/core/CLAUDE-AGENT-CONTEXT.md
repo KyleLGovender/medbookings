@@ -391,7 +391,7 @@ cleanupOldAuditLogs(retentionDays)
 5. `CONTEXT-LOADING.md` - Task-specific context patterns
 6. `VERIFICATION-PROTOCOLS.md` - Route & data validation
 7. `DEVELOPMENT-WORKFLOW.md` - Task execution flow
-8. `DEPLOYMENT.md` - Production checklist
+8. `VERCEL-DEPLOYMENT.md` - Production deployment guide
 9. `BUG-DETECTION.md` - Common bug patterns
 10. `CLAUDE-MD-AUTO-SYNC.md` - Auto-sync system
 

@@ -19,6 +19,7 @@ Welcome to the MedBookings documentation! This index provides a comprehensive ov
 - [Core Documentation](#core-documentation)
 - [Compliance & Standards](#compliance--standards)
 - [Deployment Guides](#deployment-guides)
+- [Setup & Configuration](#setup--configuration)
 - [Developer Guides](#developer-guides)
 - [By Use Case](#by-use-case)
 
@@ -124,7 +125,7 @@ Documentation ensuring code quality, security, and regulatory compliance.
 
 ---
 
-### 🔐 [Security Checklist](/docs/compliance/SECURITY-CHECKLIST.md)
+### 🔐 [Security Checklist](/docs/deployment/SECURITY-CHECKLIST.md)
 **Purpose**: Production security & POPIA compliance checklist
 **Status**: Updated 2025-11-03 (renamed from DEPLOYMENT.md)
 **Contents**:
@@ -262,6 +263,55 @@ Step-by-step guides for deploying to production and staging environments.
 
 ---
 
+## Setup & Configuration
+
+Guides for initial project setup and environment configuration.
+
+### ⚙️ [Environment Setup](/docs/setup/ENVIRONMENT-SETUP.md)
+**Purpose**: Complete environment setup walkthrough
+**Status**: Updated 2025-11-04
+**Contents**:
+- Quick start guide for new developers
+- Security rules (what to never commit)
+- File structure (`.env.local`, `.env.example`, `.env.test`)
+- Local development setup (Docker, PostgreSQL, Prisma)
+- Getting credentials (Google OAuth, SendGrid, Twilio, Upstash)
+- Production vs local setup
+- Troubleshooting common issues
+
+**When to use**: First-time setup, onboarding new developers, credential management
+
+---
+
+### 📋 [Environment Variables Reference](/docs/setup/ENVIRONMENT-VARIABLES.md)
+**Purpose**: Complete reference for all environment variables
+**Status**: Created 2025-11-04
+**Criticality**: 🔴 REQUIRED for setup
+**Contents**:
+- Required variables (database, auth, OAuth, storage, email, SMS)
+- Optional variables (Redis, additional services)
+- Environment-specific values (production, staging, local)
+- Variable descriptions and validation
+- How to get each credential
+- Common validation errors
+
+**When to use**: Reference for any environment variable, troubleshooting config issues, credential setup
+
+---
+
+### 🔐 [Credential Rotation](/docs/deployment/CREDENTIAL-ROTATION.md)
+**Purpose**: Security procedures for rotating credentials
+**Status**: Updated 2025-11-03
+**Contents**:
+- Rotation schedule recommendations
+- Step-by-step rotation procedures
+- Zero-downtime rotation strategies
+- Emergency rotation procedures
+
+**When to use**: Regular maintenance, security incidents, credential compromise
+
+---
+
 ## Developer Guides
 
 Comprehensive guides for developers working on the MedBookings codebase.
@@ -345,14 +395,14 @@ Find documentation quickly based on what you're trying to accomplish.
 
 ### 🚀 Deploying to Production
 
-1. [Security Checklist](/docs/compliance/SECURITY-CHECKLIST.md) - Pre-deployment verification
+1. [Security Checklist](/docs/deployment/SECURITY-CHECKLIST.md) - Pre-deployment verification
 2. [Vercel Deployment](/docs/deployment/VERCEL-DEPLOYMENT.md) - Deployment steps
 3. [Upstash Redis Setup](/docs/deployment/UPSTASH-REDIS-SETUP.md) - Redis configuration
-4. [Security Checklist](/docs/compliance/SECURITY-CHECKLIST.md) - Post-deployment verification
+4. [Security Checklist](/docs/deployment/SECURITY-CHECKLIST.md) - Post-deployment verification
 
 ### 🔒 Security & Compliance
 
-1. [Security Checklist](/docs/compliance/SECURITY-CHECKLIST.md) - POPIA compliance
+1. [Security Checklist](/docs/deployment/SECURITY-CHECKLIST.md) - POPIA compliance
 2. [Logging](/docs/compliance/LOGGING.md) - PHI protection
 3. [Timezone Guidelines](/docs/compliance/TIMEZONE-GUIDELINES.md) - Data integrity
 4. [Type Safety](/docs/compliance/TYPE-SAFETY.md) - Secure type handling
@@ -403,7 +453,6 @@ docs/
 │   ├── CLAUDE-MD-AUTO-SYNC.md
 │   ├── COMPLIANCE-SYSTEM.md
 │   ├── CONTEXT-LOADING.md
-│   ├── SECURITY-CHECKLIST.md
 │   ├── DEVELOPMENT-WORKFLOW.md
 │   ├── ENFORCEMENT-COVERAGE.md
 │   ├── LOGGING.md
@@ -411,12 +460,19 @@ docs/
 │   ├── TYPE-SAFETY.md
 │   └── VERIFICATION-PROTOCOLS.md
 ├── deployment/ (production deployment)
+│   ├── CREDENTIAL-ROTATION.md
+│   ├── SECURITY-CHECKLIST.md
 │   ├── UPSTASH-REDIS-SETUP.md
 │   └── VERCEL-DEPLOYMENT.md
-└── guides/ (developer guides)
-    ├── ACTIONABLE-WARNINGS-IMPLEMENTATION.md
-    ├── DEVELOPER-PRINCIPLES.md
-    └── DOCS-VALIDATION-GUIDE.md
+├── setup/ (project setup and configuration)
+│   ├── ENVIRONMENT-SETUP.md
+│   └── ENVIRONMENT-VARIABLES.md
+├── guides/ (developer guides)
+│   ├── ACTIONABLE-WARNINGS-IMPLEMENTATION.md
+│   ├── DEVELOPER-PRINCIPLES.md
+│   └── DOCS-VALIDATION-GUIDE.md
+└── archive/ (historical documentation)
+    └── REMEDIATION-STATUS.md
 ```
 
 ---
@@ -457,7 +513,7 @@ docs/
 
 - **Technical Questions**: See [Developer Principles](/docs/guides/DEVELOPER-PRINCIPLES.md)
 - **Deployment Issues**: See [Vercel Deployment](/docs/deployment/VERCEL-DEPLOYMENT.md)
-- **Security Concerns**: See [Security Checklist](/docs/compliance/SECURITY-CHECKLIST.md)
+- **Security Concerns**: See [Security Checklist](/docs/deployment/SECURITY-CHECKLIST.md)
 - **Documentation Issues**: See [Docs Validation Guide](/docs/guides/DOCS-VALIDATION-GUIDE.md)
 
 ### Feedback
@@ -486,6 +542,6 @@ Found an issue or have a suggestion?
 - [Vercel Deployment](/docs/deployment/VERCEL-DEPLOYMENT.md)
 
 **Critical for Production:**
-- [Security Checklist](/docs/compliance/SECURITY-CHECKLIST.md)
+- [Security Checklist](/docs/deployment/SECURITY-CHECKLIST.md)
 - [Upstash Redis Setup](/docs/deployment/UPSTASH-REDIS-SETUP.md)
 - [Compliance System](/docs/compliance/COMPLIANCE-SYSTEM.md)

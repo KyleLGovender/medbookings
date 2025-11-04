@@ -90,7 +90,6 @@ curl https://your-domain.com/dashboard
 **Related Documentation:**
 - `/src/lib/auth.ts`
 - `/src/middleware.ts`
-- `/docs/compliance/SESSION-MANAGEMENT.md` (to be created)
 
 ---
 
@@ -354,6 +353,8 @@ cat .husky/pre-commit
 ---
 
 ### 12. Environment-Specific Configuration
+
+> 📘 **Complete Variable Reference**: See [ENVIRONMENT-VARIABLES.md](/docs/setup/ENVIRONMENT-VARIABLES.md) for all environment variables and setup instructions.
 
 **Production:**
 - [ ] `NODE_ENV=production` set

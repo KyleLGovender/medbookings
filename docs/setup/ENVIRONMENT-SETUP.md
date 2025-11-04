@@ -3,6 +3,8 @@
 **Last Updated:** 2025-11-04
 **Applies to:** MedBookings v1.0+
 
+> 📘 **Complete Variable Reference**: See [ENVIRONMENT-VARIABLES.md](./ENVIRONMENT-VARIABLES.md) for detailed descriptions of all environment variables, credential setup instructions, and validation information.
+
 ---
 
 ## 📋 Quick Start
@@ -335,6 +337,7 @@ Error 400: redirect_uri_mismatch
 ## 📚 Additional Resources
 
 **Related Documentation:**
+- [Environment Variables Reference](/docs/setup/ENVIRONMENT-VARIABLES.md) - Complete variable reference
 - [Deployment Guide](/docs/deployment/VERCEL-DEPLOYMENT.md)
 - [Security Checklist](/docs/deployment/SECURITY-CHECKLIST.md)
 - [Credential Rotation](/docs/deployment/CREDENTIAL-ROTATION.md)

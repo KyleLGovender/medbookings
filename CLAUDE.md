@@ -813,14 +813,15 @@
 
   🚀 SECTION 15: DEPLOYMENT
 
-  📄 **Security & Compliance Checklist**: See `/docs/compliance/SECURITY-CHECKLIST.md` for:
+  📄 **Security & Compliance Checklist**: See `/docs/deployment/SECURITY-CHECKLIST.md` for:
 
   📄 **Deployment Instructions**: See `/docs/deployment/VERCEL-DEPLOYMENT.md` and `/docs/deployment/UPSTASH-REDIS-SETUP.md` for deployment steps.
 
+  📄 **Environment Variables Reference**: See `/docs/setup/ENVIRONMENT-VARIABLES.md` for complete variable reference, credential setup, and validation.
+
   **SECURITY-CHECKLIST.md covers**:
-  - Complete environment variable reference (Database, Auth, Redis, Email, SMS)
-  - Upstash Redis setup for rate limiting (CRITICAL for production)
   - Security verification checklist (POPIA compliance)
+  - Upstash Redis setup for rate limiting (CRITICAL for production)
   - Post-deployment verification steps
   - Troubleshooting common deployment issues
   - Rollback procedures and incident response

@@ -1,9 +1,9 @@
 {
-  "claudeMdHash": "5f7cfa9d265d45595c21652d5af6503d54ef1f996d4b313373db510260f1bf65",
-  "lastSync": "2025-11-04T08:44:19.652Z",
+  "claudeMdHash": "9a7601eb04dd68fdf2fc8491d7586a177d031a7e51b80de06f011fb3247a9217",
+  "lastSync": "2025-11-04T09:40:20.816Z",
   "validatorConfig": {
     "version": "1.0.0",
-    "lastUpdated": "2025-11-04T08:44:19.651Z",
+    "lastUpdated": "2025-11-04T09:40:20.816Z",
     "rules": {
       "timezone": {
         "enabled": true,
@@ -145,11 +145,11 @@
       "compliance/CLAUDE-MD-AUTO-SYNC.md",
       "compliance/ENFORCEMENT-COVERAGE.md",
       "guides/DOCS-VALIDATION-GUIDE.md",
-      "compliance/SECURITY-CHECKLIST.md",
+      "deployment/SECURITY-CHECKLIST.md",
       "deployment/VERCEL-DEPLOYMENT.md",
       "deployment/UPSTASH-REDIS-SETUP.md"
     ],
     "orphanedDocs": [],
-    "lastValidated": "2025-11-04T08:44:19.652Z"
+    "lastValidated": "2025-11-04T09:40:20.816Z"
   }
 }

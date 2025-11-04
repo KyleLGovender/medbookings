@@ -283,7 +283,7 @@ The validation system expects these files to be referenced:
 7. ✅ `DEVELOPMENT-WORKFLOW.md` - Development workflow
 8. ✅ `COMPLIANCE-SYSTEM.md` - Enforcement system
 9. ✅ `CLAUDE-MD-AUTO-SYNC.md` - Auto-sync system
-10. ✅ `DEPLOYMENT.md` - Production deployment
+10. ✅ `VERCEL-DEPLOYMENT.md` - Production deployment
 
 ---
 
@@ -376,9 +376,7 @@ Before committing CLAUDE.md changes:
 ## Related Documentation
 
 - [CLAUDE.md](../CLAUDE.md) - Main coding guidelines
-- [CLAUDE-DOCS-INTEGRATION-PLAN.md](../CLAUDE-DOCS-INTEGRATION-PLAN.md) - Original integration plan
-- [CLAUDE-DOCS-INTEGRATION-SUMMARY.md](../CLAUDE-DOCS-INTEGRATION-SUMMARY.md) - Implementation summary
-- [CLAUDE-MD-AUTO-SYNC.md](CLAUDE-MD-AUTO-SYNC.md) - Auto-sync system details
+- [CLAUDE-MD-AUTO-SYNC.md](../compliance/CLAUDE-MD-AUTO-SYNC.md) - Auto-sync system details
 
 ---
 
