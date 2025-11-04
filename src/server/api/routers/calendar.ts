@@ -1171,68 +1171,72 @@ export const calendarRouter = createTRPCRouter({
         });
       }
 
-      const updatedAvailability = await ctx.prisma.availability.update({
-        where: { id: input.id },
-        data: {
-          status: AvailabilityStatus.ACCEPTED,
-          acceptedById: ctx.session.user.id,
-          acceptedAt: nowUTC(),
+      // Use transaction to ensure atomic update of availability and slot creation
+      const result = await ctx.prisma.$transaction(
+        async (tx) => {
+          const updatedAvailability = await tx.availability.update({
+            where: { id: input.id },
+            data: {
+              status: AvailabilityStatus.ACCEPTED,
+              acceptedById: ctx.session.user.id,
+              acceptedAt: nowUTC(),
+            },
+            include: {
+              availableServices: true,
+            },
+          });
+
+          // Generate slots for the accepted availability
+          const slotData = generateSlotDataForAvailability({
+            availabilityId: updatedAvailability.id,
+            startTime: updatedAvailability.startTime,
+            endTime: updatedAvailability.endTime,
+            schedulingRule: updatedAvailability.schedulingRule as SchedulingRule,
+            schedulingInterval: updatedAvailability.schedulingInterval || undefined,
+            services: updatedAvailability.availableServices.map((as) => ({
+              serviceId: as.serviceId,
+              serviceConfigId: as.id, // Use the ServiceAvailabilityConfig ID
+              duration: as.duration,
+              price: Number(as.price),
+            })),
+          });
+
+          let slotsGenerated = 0;
+          if (slotData.errors.length > 0) {
+            logger.warn('Slot generation failed for accepted availability', {
+              availabilityId: updatedAvailability.id,
+              errors: slotData.errors,
+            });
+            // Throw error to rollback transaction if slot generation fails
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: `Slot generation failed: ${slotData.errors.join(', ')}`,
+            });
+          } else if (slotData.slotRecords.length > 0) {
+            // Create slots in database atomically with availability update
+            await tx.calculatedAvailabilitySlot.createMany({
+              data: slotData.slotRecords,
+            });
+            slotsGenerated = slotData.totalSlots;
+          }
+
+          return {
+            success: true,
+            id: input.id,
+            slotsGenerated,
+          };
         },
-        include: {
-          availableServices: true,
-        },
+        {
+          maxWait: 10000,
+          timeout: 20000,
+        }
+      );
+
+      logger.info('Availability accepted notification would be sent', {
+        availabilityId: input.id,
       });
 
-      // Generate slots for the accepted availability
-      try {
-        const slotData = generateSlotDataForAvailability({
-          availabilityId: updatedAvailability.id,
-          startTime: updatedAvailability.startTime,
-          endTime: updatedAvailability.endTime,
-          schedulingRule: updatedAvailability.schedulingRule as SchedulingRule,
-          schedulingInterval: updatedAvailability.schedulingInterval || undefined,
-          services: updatedAvailability.availableServices.map((as) => ({
-            serviceId: as.serviceId,
-            serviceConfigId: as.id, // Use the ServiceAvailabilityConfig ID
-            duration: as.duration,
-            price: Number(as.price),
-          })),
-        });
-
-        let slotsGenerated = 0;
-        if (slotData.errors.length > 0) {
-          logger.warn('Slot generation failed for accepted availability', {
-            availabilityId: updatedAvailability.id,
-            errors: slotData.errors,
-          });
-        } else if (slotData.slotRecords.length > 0) {
-          // Create slots in database (Option C: database operations in tRPC)
-          await ctx.prisma.calculatedAvailabilitySlot.createMany({
-            data: slotData.slotRecords,
-          });
-          slotsGenerated = slotData.totalSlots;
-        }
-
-        logger.info('Availability accepted notification would be sent', {
-          availabilityId: input.id,
-        });
-
-        return {
-          success: true,
-          id: input.id,
-          slotsGenerated,
-        };
-      } catch (slotGenError) {
-        logger.warn('Slot generation error for accepted availability', {
-          availabilityId: input.id,
-          error: slotGenError instanceof Error ? slotGenError.message : String(slotGenError),
-        });
-        return {
-          success: true,
-          id: input.id,
-          slotsGenerated: 0,
-        };
-      }
+      return result;
     }),
 
   /**
@@ -1271,6 +1275,7 @@ export const calendarRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, status-only update, no race condition risk
       await ctx.prisma.availability.update({
         where: { id: input.id },
         data: {
@@ -2077,6 +2082,7 @@ export const calendarRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, guest info only, no race condition risk for non-critical fields
       const updatedBooking = await ctx.prisma.booking.update({
         where: { id },
         data: updateData,
@@ -2107,43 +2113,62 @@ export const calendarRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      // Verify the booking belongs to the current user
-      const existingBooking = await ctx.prisma.booking.findFirst({
-        where: {
-          id: input.id,
-          createdById: userId,
-        },
-      });
+      // Use transaction to ensure atomic booking cancellation and slot release
+      const cancelledBooking = await ctx.prisma.$transaction(
+        async (tx) => {
+          // Verify the booking belongs to the current user
+          const existingBooking = await tx.booking.findFirst({
+            where: {
+              id: input.id,
+              createdById: userId,
+            },
+          });
 
-      if (!existingBooking) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Booking not found or you do not have permission to cancel it',
-        });
-      }
+          if (!existingBooking) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Booking not found or you do not have permission to cancel it',
+            });
+          }
 
-      // Cancel the booking
-      const cancelledBooking = await ctx.prisma.booking.update({
-        where: { id: input.id },
-        data: { status: 'CANCELLED' },
-        include: {
-          slot: {
+          // Free up the slot atomically when cancelling
+          if (existingBooking.slotId) {
+            await tx.calculatedAvailabilitySlot.update({
+              where: { id: existingBooking.slotId },
+              data: { status: 'AVAILABLE' },
+            });
+          }
+
+          // Cancel the booking
+          const cancelled = await tx.booking.update({
+            where: { id: input.id },
+            data: { status: 'CANCELLED' },
             include: {
-              service: true,
-              serviceConfig: true,
-              availability: {
+              slot: {
                 include: {
-                  provider: {
+                  service: true,
+                  serviceConfig: true,
+                  availability: {
                     include: {
-                      user: true,
+                      provider: {
+                        include: {
+                          user: true,
+                        },
+                      },
                     },
                   },
                 },
               },
             },
-          },
+          });
+
+          return cancelled;
         },
-      });
+        {
+          maxWait: 10000,
+          timeout: 20000,
+        }
+      );
 
       return cancelledBooking;
     }),
@@ -2158,52 +2183,80 @@ export const calendarRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      // Verify the booking belongs to the current user
-      const existingBooking = await ctx.prisma.booking.findFirst({
-        where: {
-          id: input.id,
-          createdById: userId,
-        },
-      });
-
-      if (!existingBooking) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Booking not found or you do not have permission to reschedule it',
-        });
-      }
-
-      // Verify the new slot exists and is available
-      const newSlot = await ctx.prisma.calculatedAvailabilitySlot.findUnique({
-        where: { id: input.newSlotId },
-      });
-
-      if (!newSlot || newSlot.status !== 'AVAILABLE') {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Selected slot is not available' });
-      }
-
-      // Update the booking with the new slot
-      const rescheduledBooking = await ctx.prisma.booking.update({
-        where: { id: input.id },
-        data: { slotId: input.newSlotId },
-        include: {
-          slot: {
+      // Use transaction to prevent race conditions and ensure atomic slot updates
+      const rescheduledBooking = await ctx.prisma.$transaction(
+        async (tx) => {
+          // Verify the booking belongs to the current user
+          const existingBooking = await tx.booking.findFirst({
+            where: {
+              id: input.id,
+              createdById: userId,
+            },
             include: {
-              service: true,
-              serviceConfig: true,
-              availability: {
+              slot: true,
+            },
+          });
+
+          if (!existingBooking) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Booking not found or you do not have permission to reschedule it',
+            });
+          }
+
+          // Verify the new slot exists and is available
+          const newSlot = await tx.calculatedAvailabilitySlot.findUnique({
+            where: { id: input.newSlotId },
+          });
+
+          if (!newSlot || newSlot.status !== 'AVAILABLE') {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Selected slot is not available' });
+          }
+
+          // Free up the old slot atomically
+          if (existingBooking.slot && existingBooking.slotId) {
+            await tx.calculatedAvailabilitySlot.update({
+              where: { id: existingBooking.slotId },
+              data: { status: 'AVAILABLE' },
+            });
+          }
+
+          // Mark new slot as booked atomically
+          await tx.calculatedAvailabilitySlot.update({
+            where: { id: input.newSlotId },
+            data: { status: 'BOOKED' },
+          });
+
+          // Update the booking with the new slot
+          const updated = await tx.booking.update({
+            where: { id: input.id },
+            data: { slotId: input.newSlotId },
+            include: {
+              slot: {
                 include: {
-                  provider: {
+                  service: true,
+                  serviceConfig: true,
+                  availability: {
                     include: {
-                      user: true,
+                      provider: {
+                        include: {
+                          user: true,
+                        },
+                      },
                     },
                   },
                 },
               },
             },
-          },
+          });
+
+          return updated;
         },
-      });
+        {
+          maxWait: 10000,
+          timeout: 20000,
+        }
+      );
 
       return rescheduledBooking;
     }),
