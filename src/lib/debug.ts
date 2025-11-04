@@ -3,7 +3,10 @@
  *
  * This utility provides a simple way to toggle debugging on/off across
  * all provider form components and related server actions.
+ *
+ * Now integrated with the centralized logger infrastructure for consistency.
  */
+import { logger } from '@/lib/logger';
 
 // Configuration object with debug settings
 const debugConfig = {
@@ -87,7 +90,11 @@ export const providerDebug = {
         this.isEnabled(component as keyof typeof debugConfig.components) &&
         this.isLevelEnabled('debug'))
     ) {
-      console.log(`[DEBUG][${component.toUpperCase()}] ${message}`, ...data);
+      // Use centralized logger with 'providers' feature flag
+      logger.debug('providers', `[${component.toUpperCase()}] ${message}`, {
+        component,
+        data: data.length > 0 ? data : undefined,
+      });
     }
   },
 
@@ -100,7 +107,12 @@ export const providerDebug = {
     ...data: unknown[]
   ): void {
     if (this.isLevelEnabled('error')) {
-      console.error(`[ERROR][${component.toUpperCase()}] ${message}`, ...data);
+      // Use centralized logger for error logging
+      const errorData = data.length > 0 && data[0] instanceof Error ? data[0] : undefined;
+      logger.error(`[${component.toUpperCase()}] ${message}`, errorData, {
+        component,
+        additionalData: data.length > 1 ? data.slice(1) : undefined,
+      });
     }
   },
 
@@ -109,9 +121,11 @@ export const providerDebug = {
    */
   logFormData(component: keyof typeof debugConfig.components, formData: FormData): void {
     if (this.isEnabled(component) && this.isLevelEnabled('debug')) {
-      console.log(`[DEBUG][${component.toUpperCase()}] Form data entries:`);
-      Array.from(formData.entries()).forEach(([key, value]) => {
-        console.log(`  ${key}: ${value}`);
+      // Convert FormData to object for logging
+      const formDataObject = Object.fromEntries(Array.from(formData.entries()));
+      logger.debug('providers', `[${component.toUpperCase()}] Form data entries`, {
+        component,
+        formData: formDataObject,
       });
     }
   },

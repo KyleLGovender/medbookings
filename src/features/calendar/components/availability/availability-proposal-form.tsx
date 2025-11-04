@@ -38,7 +38,6 @@ import { ServiceSelectionSection } from '@/features/calendar/components/availabi
 import { useAssociatedServices } from '@/features/calendar/hooks/use-associated-services';
 import { useCreateAvailability } from '@/features/calendar/hooks/use-availability';
 import { useCurrentProvider } from '@/features/calendar/hooks/use-current-provider';
-import { useOrganizationLocations } from '@/features/calendar/hooks/use-organization-locations';
 import { useUserOrganizations } from '@/features/calendar/hooks/use-user-organizations';
 import {
   createRecurrencePattern,
@@ -46,6 +45,7 @@ import {
 } from '@/features/calendar/lib/recurrence-utils';
 import { createAvailabilityDataSchema } from '@/features/calendar/types/schemas';
 import { CustomRecurrenceData, RecurrenceOption } from '@/features/calendar/types/types';
+import { useOrganizationLocations } from '@/features/organizations/hooks/use-organization-locations';
 import { useToast } from '@/hooks/use-toast';
 import { addMilliseconds, cloneDate, nowUTC, parseUTC } from '@/lib/timezone';
 import { type RouterInputs } from '@/utils/api';
