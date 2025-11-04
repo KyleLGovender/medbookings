@@ -46,8 +46,8 @@ npm run dev
 - ✅ Keep `.env.test` with mock data only
 
 **DON'T:**
-- ❌ NEVER commit `.env` with real secrets
 - ❌ NEVER commit `.env.local`
+- ❌ NEVER create/commit `.env` with real secrets
 - ❌ NEVER commit `.env.production`
 - ❌ NEVER share secrets via Slack/email
 - ❌ NEVER use production secrets in local development
@@ -67,7 +67,6 @@ npm run dev
 | `.env.example` | Template for all environments | ✅ YES | ❌ NO |
 | `.env.local` | **YOUR LOCAL DEVELOPMENT** | ❌ NO | ✅ YES (local only) |
 | `.env.test` | Test configuration | ✅ YES | ❌ NO (mock data) |
-| `.env` | ❌ DO NOT USE | ❌ NO | ❌ Should be empty template |
 | `.env.production` | ❌ DO NOT CREATE | ❌ NO | N/A |
 
 ---
