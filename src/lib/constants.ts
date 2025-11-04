@@ -30,3 +30,29 @@ const currentEnv = getEnvironment();
 export const isDevelopment = currentEnv === 'development';
 export const isProduction = currentEnv === 'production';
 export const isTest = currentEnv === 'test';
+
+/**
+ * Application-wide constants
+ */
+
+export const PAGINATION_LIMITS = {
+  DEFAULT: 50,
+  DROPDOWN: 100,
+  ADMIN_LIST: 50,
+  ADMIN_BULK: 1000,
+  EXPORT: 10000,
+  SMALL: 20,
+  VALIDATION: 10,
+} as const;
+
+export const SESSION_TIMEOUT = {
+  MAX_INACTIVITY_SECONDS: 30 * 60,
+  UPDATE_INTERVAL_SECONDS: 5 * 60,
+  WARNING_THRESHOLD_SECONDS: 5 * 60,
+} as const;
+
+export const PASSWORD_CONFIG = {
+  MIGRATION_DEADLINE_DAYS: 90,
+  RESET_TOKEN_EXPIRY_MS: 24 * 60 * 60 * 1000,
+  VERIFICATION_TOKEN_EXPIRY_MS: 24 * 60 * 60 * 1000,
+} as const;

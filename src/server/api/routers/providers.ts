@@ -16,7 +16,7 @@ import {
   regulatoryRequirementsSchema,
   servicesSchema,
 } from '@/features/providers/types/schemas';
-import { logger, sanitizeEmail } from '@/lib/logger';
+import { logger, sanitizeEmail, sanitizePhone } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 import {
   adminProcedure,
@@ -250,11 +250,7 @@ export const providersRouter = createTRPCRouter({
           },
         },
         services: true,
-        user: {
-          select: {
-            email: true,
-          },
-        },
+        // ✅ REMOVED: user.email (PHI - not needed for public view)
         requirementSubmissions: {
           include: {
             requirementType: true,
@@ -266,7 +262,13 @@ export const providersRouter = createTRPCRouter({
       },
     });
 
-    return providers;
+    // ✅ Mask provider contact info (PHI protection)
+    return providers.map((provider) => ({
+      ...provider,
+      // Only show contact info if provider opted to show pricing (indicates willingness to be public)
+      email: provider.showPrice ? sanitizeEmail(provider.email) : null,
+      whatsapp: provider.showPrice && provider.whatsapp ? sanitizePhone(provider.whatsapp) : null,
+    }));
   }),
 
   // ============================================================================
@@ -472,6 +474,29 @@ export const providersRouter = createTRPCRouter({
       // Basic validation
       if (input.providerTypeIds.length === 0) {
         throw new Error('At least one provider type must be selected');
+      }
+
+      // Validate email (required and not a default value)
+      if (
+        !input.basicInfo.email ||
+        input.basicInfo.email === 'default@example.com' ||
+        input.basicInfo.email.trim() === ''
+      ) {
+        throw new Error('Valid email address is required');
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(input.basicInfo.email)) {
+        throw new Error('Invalid email format');
+      }
+
+      // Validate WhatsApp format if provided (E.164 format: +[country code][number])
+      if (input.basicInfo.whatsapp) {
+        const whatsappRegex = /^\+[1-9]\d{1,14}$/;
+        if (!whatsappRegex.test(input.basicInfo.whatsapp)) {
+          throw new Error('Invalid WhatsApp number format. Use E.164 format (e.g., +27821234567)');
+        }
       }
 
       // Validate that all provider types exist

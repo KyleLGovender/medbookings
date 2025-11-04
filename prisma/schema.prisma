@@ -18,6 +18,7 @@ model User {
   whatsappVerified         DateTime?
   password                 String?
   passwordMigratedAt       DateTime?
+  passwordMigrationDeadline DateTime? // Deadline for SHA-256 to bcrypt migration (90 days from user creation)
   image                    String?
   role                     UserRole                        @default(USER)
   createdAt                DateTime                        @default(now())
@@ -91,8 +92,8 @@ model Provider {
   image                   String
   languages               Languages[]
   website                 String?
-  email                   String                           @default("default@example.com")
-  whatsapp                String                           @default("+1234567890")
+  email                   String
+  whatsapp                String?
   showPrice               Boolean                          @default(true)
   status                  ProviderStatus                   @default(PENDING_APPROVAL)
   approvedById            String?
@@ -748,6 +749,18 @@ model EmailVerificationToken {
 
   @@index([token])
   @@index([identifier])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+  usedAt    DateTime? // Track if token has been used
+
+  @@index([token])
+  @@index([userId])
 }
 
 model AuditLog {

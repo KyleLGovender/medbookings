@@ -10,7 +10,8 @@ import type { NextRequest } from 'next/server';
 import { type JWT, getToken } from 'next-auth/jwt';
 import { withAuth } from 'next-auth/middleware';
 
-import { logger } from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
+import { logger, sanitizeEmail } from '@/lib/logger';
 import { nowUTC } from '@/lib/timezone';
 
 /**
@@ -172,10 +173,11 @@ export default withAuth(
     const tokenIssuedAt = ((token.iat as number) ?? 0) * 1000;
     const tokenExpiry = ((token.exp as number) ?? 0) * 1000;
 
-    // Calculate last activity time (we use JWT issued time as proxy for last activity)
-    // In production, you might want to track actual last activity separately
-    const lastActivity = tokenIssuedAt;
-    const timeSinceLastActivity = now - lastActivity;
+    // Use lastActivity timestamp if available (tracks real user activity),
+    // fallback to tokenIssuedAt for backward compatibility with old tokens
+    const lastActivitySeconds = (token.lastActivity as number) ?? (token.iat as number) ?? 0;
+    const lastActivityMs = lastActivitySeconds * 1000;
+    const timeSinceLastActivity = now - lastActivityMs;
 
     // Check if session has timed out due to inactivity
     if (timeSinceLastActivity > SESSION_TIMEOUT_MS) {
@@ -183,6 +185,8 @@ export default withAuth(
       logger.audit('Session timeout due to inactivity', {
         userId: token.sub,
         inactivityMinutes: Math.floor(timeSinceLastActivity / 1000 / 60),
+        // eslint-disable-next-line rulesdir/no-new-date -- Converting known timestamp to ISO string
+        lastActivity: new Date(lastActivityMs).toISOString(),
         pathname,
         action: 'SESSION_TIMEOUT',
       });
@@ -202,9 +206,34 @@ export default withAuth(
     const hasAccess = await checkRoutePermissions(pathname, token);
 
     if (!hasAccess) {
+      // Determine the specific reason for access denial
+      const isEmailUnverified = !isEmailVerified(token.emailVerified ?? null);
+      const reason = isEmailUnverified ? 'email_not_verified' : 'insufficient_permissions';
+
+      // Log authorization failure for audit trail (POPIA compliance)
+      await createAuditLog({
+        action: 'Authorization failed',
+        category: 'AUTHORIZATION',
+        userId: token.sub,
+        userEmail: sanitizeEmail((token.email as string) || ''),
+        resource: 'Route',
+        resourceId: pathname,
+        ipAddress:
+          req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+          req.headers.get('x-real-ip') ||
+          'unknown',
+        metadata: {
+          attemptedRoute: pathname,
+          userRole: token.role || 'USER',
+          emailVerified: !isEmailUnverified,
+          reason,
+          userAgent: req.headers.get('user-agent') || 'unknown',
+        },
+      });
+
       // Check if this is an email verification issue
       if (
-        !isEmailVerified(token.emailVerified ?? null) &&
+        isEmailUnverified &&
         (pathname.startsWith('/providers') ||
           pathname.startsWith('/calendar') ||
           pathname.startsWith('/availability') ||

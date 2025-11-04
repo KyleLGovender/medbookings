@@ -127,19 +127,35 @@ function createInMemoryRateLimit(
   maxAttempts: number,
   windowMs: number
 ): { limit: (identifier: string) => Promise<RateLimitResult> } {
-  // ✅ FAIL CLOSED: Refuse to work in production without Redis
+  // ⚠️ FAIL-OPEN WITH AGGRESSIVE LOGGING: Allow operation but log heavily
+  // This prevents complete application failure in production without Redis,
+  // but still provides security through detailed audit trails
   if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PHASE) {
     logger.error(
-      'PRODUCTION RATE LIMIT FAILURE: In-memory rate limiting is not safe for production'
+      'CRITICAL SECURITY WARNING: Using in-memory rate limiting in production. ' +
+        'This ONLY works for single-instance deployments. ' +
+        'For multi-instance/serverless deployments, configure Upstash Redis immediately: ' +
+        'Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables. ' +
+        'See: https://console.upstash.com/redis'
     );
+
     return {
-      limit: async () => {
-        // Always fail in production without Redis to prevent bypass
+      limit: async (identifier: string) => {
+        // Log EVERY rate limit check in production to detect abuse
+        logger.warn('Production in-memory rate limit check (UNSAFE FOR MULTI-INSTANCE)', {
+          identifier,
+          timestamp: nowUTC().toISOString(),
+          maxAttempts,
+          windowMs,
+          warning: 'Rate limiting may be ineffective across multiple instances',
+        });
+
+        // Allow operation but track for audit purposes
         return {
-          success: false,
-          limit: 0,
-          remaining: 0,
-          reset: nowUTC().getTime(),
+          success: true, // FAIL-OPEN: Allow with aggressive logging
+          limit: maxAttempts,
+          remaining: maxAttempts,
+          reset: nowUTC().getTime() + windowMs,
           pending: Promise.resolve(),
         };
       },

@@ -34,6 +34,7 @@ declare module 'next-auth/jwt' {
     id?: string;
     role?: UserRole;
     emailVerified?: Date | null;
+    lastActivity?: number; // Unix timestamp in seconds - tracks real user activity for POPIA timeout
   }
 }
 
@@ -43,6 +44,75 @@ interface User {
   name?: string | null;
   email?: string | null;
   image?: string | null;
+}
+
+/**
+ * Check if user's email is in ADMIN_EMAILS env var and promote if needed
+ * Consolidates admin auto-promotion logic with audit logging
+ * @returns The user's role (either 'ADMIN' or their current role)
+ */
+async function checkAndPromoteToAdmin(
+  user: { id?: string; email?: string | null; role?: UserRole },
+  existingUserId?: string
+): Promise<UserRole> {
+  const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
+
+  if (!user.email || !adminEmails.includes(user.email)) {
+    return user.role || 'USER'; // Default role
+  }
+
+  // User email is in ADMIN_EMAILS list
+  let wasPromoted = false;
+  let previousRole: UserRole | undefined;
+
+  // If we have an existing user ID, check if promotion is needed
+  if (existingUserId) {
+    const existingUser = await prisma.user.findUnique({
+      where: { id: existingUserId },
+      select: { id: true, role: true },
+    });
+
+    if (existingUser && existingUser.role !== 'ADMIN') {
+      // Promote to ADMIN
+      previousRole = existingUser.role;
+      await prisma.user.update({
+        where: { id: existingUserId },
+        data: { role: 'ADMIN' },
+      });
+      wasPromoted = true;
+    } else if (existingUser && existingUser.role === 'ADMIN') {
+      // Already ADMIN
+      return 'ADMIN';
+    }
+  }
+
+  // Log promotion for audit trail (POPIA compliance)
+  if (wasPromoted && existingUserId) {
+    await import('@/lib/audit').then(({ createAuditLog }) =>
+      createAuditLog({
+        action: 'Admin role auto-assigned',
+        category: 'ADMIN_ACTION',
+        userId: existingUserId,
+        userEmail: sanitizeEmail(user.email),
+        resource: 'User',
+        resourceId: existingUserId,
+        metadata: {
+          previousRole: previousRole || 'USER',
+          newRole: 'ADMIN',
+          reason: 'Email in ADMIN_EMAILS environment variable',
+          adminEmailsCount: adminEmails.length,
+        },
+      })
+    );
+
+    logger.audit('Admin role auto-assigned', {
+      userId: existingUserId,
+      email: sanitizeEmail(user.email),
+      previousRole: previousRole || 'USER',
+    });
+  }
+
+  return 'ADMIN';
 }
 
 export const authOptions: NextAuthOptions = {
@@ -89,6 +159,9 @@ export const authOptions: NextAuthOptions = {
               password: true,
               role: true,
               emailVerified: true,
+              passwordMigratedAt: true,
+              passwordMigrationDeadline: true,
+              createdAt: true,
             },
           });
 
@@ -121,7 +194,57 @@ export const authOptions: NextAuthOptions = {
             throw new Error('InvalidPassword');
           }
 
-          // Auto-migrate legacy SHA-256 passwords to bcrypt
+          // Check password migration deadline enforcement
+          if (needsMigration) {
+            // Calculate migration deadline (90 days from user creation)
+            const migrationDeadline =
+              user.passwordMigrationDeadline ||
+              addMilliseconds(user.createdAt, 90 * 24 * 60 * 60 * 1000);
+
+            // If deadline has passed, force password reset
+            if (nowUTC() > migrationDeadline) {
+              logger.warn('User must reset password - SHA-256 migration deadline passed', {
+                userId: user.id,
+                email: sanitizeEmail(credentials.email),
+                deadline: migrationDeadline.toISOString(),
+                daysSinceDeadline: Math.floor(
+                  (nowUTC().getTime() - migrationDeadline.getTime()) / (1000 * 60 * 60 * 24)
+                ),
+              });
+
+              // Create password reset token
+              const crypto = await import('crypto');
+              const resetToken = crypto.randomBytes(32).toString('hex');
+
+              try {
+                await prisma.passwordResetToken.create({
+                  data: {
+                    userId: user.id,
+                    token: resetToken,
+                    expires: addMilliseconds(nowUTC(), 24 * 60 * 60 * 1000), // 24 hours
+                  },
+                });
+
+                // TODO: Send password reset email
+                // const { sendPasswordResetEmail } = await import('@/features/communications/lib/email-templates');
+                // await sendPasswordResetEmail(user.email!, resetToken);
+
+                logger.info('Password reset token created for expired migration deadline', {
+                  userId: user.id,
+                  email: sanitizeEmail(credentials.email),
+                });
+              } catch (tokenError) {
+                logger.error('Failed to create password reset token', {
+                  userId: user.id,
+                  error: tokenError instanceof Error ? tokenError.message : String(tokenError),
+                });
+              }
+
+              throw new Error('PasswordResetRequired');
+            }
+          }
+
+          // Auto-migrate legacy SHA-256 passwords to bcrypt (if before deadline)
           if (needsMigration) {
             try {
               const newHash = await hashPassword(credentials.password);
@@ -165,6 +288,7 @@ export const authOptions: NextAuthOptions = {
               'UserNotFound',
               'OAuthUserAttemptingCredentials',
               'InvalidPassword',
+              'PasswordResetRequired',
             ].includes(error.message)
           ) {
             throw error;
@@ -186,23 +310,7 @@ export const authOptions: NextAuthOptions = {
           });
 
           // Auto-promote configured admin emails to ADMIN role on sign-in
-          const adminEmails =
-            process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
-
-          if (user.email && adminEmails.includes(user.email)) {
-            if (existingUser && existingUser.role !== 'ADMIN') {
-              await prisma.user.update({
-                where: { email: user.email },
-                data: { role: 'ADMIN' },
-              });
-              user.role = 'ADMIN';
-            } else if (existingUser && existingUser.role === 'ADMIN') {
-              user.role = 'ADMIN';
-            } else if (!existingUser) {
-              // For new users, set the role property so it gets saved correctly
-              user.role = 'ADMIN';
-            }
-          }
+          user.role = await checkAndPromoteToAdmin(user, existingUser?.id);
 
           // For existing Google OAuth users, automatically set emailVerified to true if not already set
           if (existingUser && !existingUser.emailVerified) {
@@ -225,34 +333,17 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      // For non-Google OAuth providers or credentials, use original logic
-      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
+      // For non-Google OAuth providers or credentials, check for admin promotion
+      try {
+        // First, check if user exists and get their current role
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email! },
+          select: { id: true, role: true, email: true },
+        });
 
-      if (user.email && adminEmails.includes(user.email)) {
-        try {
-          // First, check if user exists and get their current role
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email },
-            select: { id: true, role: true, email: true },
-          });
-
-          if (existingUser && existingUser.role !== 'ADMIN') {
-            await prisma.user.update({
-              where: { email: user.email },
-              data: { role: 'ADMIN' },
-            });
-
-            // Update the user object to reflect the new role
-            user.role = 'ADMIN';
-          } else if (existingUser && existingUser.role === 'ADMIN') {
-            user.role = 'ADMIN';
-          } else if (!existingUser) {
-            // For new users, set the role property so it gets saved correctly
-            user.role = 'ADMIN';
-          }
-        } catch (error) {
-          // Silent fail - user will still be able to sign in with default role
-        }
+        user.role = await checkAndPromoteToAdmin(user, existingUser?.id);
+      } catch (error) {
+        // Silent fail - user will still be able to sign in with default role
       }
 
       return true; // Allow sign-in
@@ -289,6 +380,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           role: dbUser?.role || user.role || 'USER', // Use database role, fallback to user object role, then default to USER
           emailVerified: dbUser?.emailVerified || null,
+          lastActivity: Math.floor(nowUTC().getTime() / 1000), // Initialize activity tracking (POPIA requirement)
         };
       }
 
@@ -310,6 +402,10 @@ export const authOptions: NextAuthOptions = {
           token.emailVerified = dbUser.emailVerified;
         }
       }
+
+      // Update lastActivity timestamp on every JWT refresh (happens every 5 minutes per session.updateAge)
+      // This ensures we track real user activity, not just initial login time
+      token.lastActivity = Math.floor(nowUTC().getTime() / 1000);
 
       return token;
     },
@@ -360,17 +456,10 @@ export const authOptions: NextAuthOptions = {
       }
 
       // Check if this new user should be an admin
-      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || [];
-
-      if (user.email && adminEmails.includes(user.email)) {
-        try {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { role: 'ADMIN' },
-          });
-        } catch (error) {
-          // Silent fail - user will have default role
-        }
+      try {
+        await checkAndPromoteToAdmin(user, user.id);
+      } catch (error) {
+        // Silent fail - user will have default role
       }
 
       // Send appropriate email based on verification status

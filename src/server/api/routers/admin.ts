@@ -298,6 +298,42 @@ export const adminRouter = createTRPCRouter({
         );
       }
 
+      // Validate that DOCUMENT requirements have uploaded files
+      const documentRequirements = provider.requirementSubmissions.filter(
+        (sub) => sub.requirementType.validationType === 'DOCUMENT' && sub.requirementType.isRequired
+      );
+
+      const missingDocuments = documentRequirements.filter(
+        (sub) =>
+          !sub.documentMetadata ||
+          (typeof sub.documentMetadata === 'object' &&
+            sub.documentMetadata !== null &&
+            !('url' in (sub.documentMetadata as Record<string, unknown>)))
+      );
+
+      if (missingDocuments.length > 0) {
+        const missingNames = missingDocuments.map((sub) => sub.requirementType.name).join(', ');
+
+        throw new Error(
+          `Cannot approve provider: ${missingDocuments.length} required documents are not uploaded. Missing: ${missingNames}`
+        );
+      }
+
+      // Validate that documents are not expired
+      const expiredDocuments = documentRequirements.filter(
+        (sub) => sub.expiresAt && sub.expiresAt < nowUTC()
+      );
+
+      if (expiredDocuments.length > 0) {
+        const expiredNames = expiredDocuments
+          .map((sub) => `${sub.requirementType.name} (expired ${sub.expiresAt!.toISOString()})`)
+          .join(', ');
+
+        throw new Error(
+          `Cannot approve provider: ${expiredDocuments.length} required documents have expired. Expired: ${expiredNames}`
+        );
+      }
+
       // Approve the provider
       const updatedProvider = await ctx.prisma.provider.update({
         where: { id: input.id },
@@ -768,10 +804,31 @@ export const adminRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const organization = await ctx.prisma.organization.findUnique({
         where: { id: input.id },
+        include: {
+          locations: true,
+          memberships: {
+            where: { role: 'OWNER' },
+          },
+        },
       });
 
       if (!organization) {
         throw new Error('Organization not found');
+      }
+
+      // Validate organization has owner
+      if (organization.memberships.length === 0) {
+        throw new Error('Cannot approve organization: No owner assigned');
+      }
+
+      // Validate organization has at least one location
+      if (organization.locations.length === 0) {
+        throw new Error('Cannot approve organization: No locations added');
+      }
+
+      // Validate organization has required contact information
+      if (!organization.email && !organization.phone) {
+        throw new Error('Cannot approve organization: Must have email or phone contact');
       }
 
       // Approve the organization

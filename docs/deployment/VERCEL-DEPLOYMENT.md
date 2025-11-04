@@ -369,15 +369,29 @@ For details, see `/docs/compliance/DEPLOYMENT.md`
 
 ### Environment Variable Security
 
+⚠️ **CRITICAL WARNING: NEVER COMMIT .env FILES**
+
+**The `.env` file contains ALL production credentials and MUST NEVER be committed to git.**
+
+If you accidentally commit `.env`:
+1. **IMMEDIATELY rotate ALL credentials** (see `/docs/deployment/CREDENTIAL-ROTATION.md`)
+2. Remove from git history using BFG Repo-Cleaner
+3. All team members must re-clone the repository
+
 ✅ **DO:**
-- Store all secrets in Vercel environment variables
-- Use different secrets per environment
-- Rotate API keys regularly
+- Store all secrets in Vercel environment variables (Project → Settings → Environment Variables)
+- Use different secrets per environment (Development, Preview, Production)
+- Rotate API keys regularly (recommended: every 90 days)
+- Use `.env.local` for local development (in `.gitignore`)
+- Verify `.env` is in `.gitignore` before any commit
+- Use credential managers (1Password, LastPass) for team sharing
 
 ❌ **DON'T:**
-- Commit `.env` files to git
+- Commit `.env` or `.env.local` files to git (NEVER!)
 - Use production keys in development
-- Share secrets in plain text
+- Share secrets in plain text (email, Slack, etc.)
+- Copy `.env` files between environments
+- Store credentials in code or comments
 
 ### POPIA Compliance (South African Data Protection)
 
