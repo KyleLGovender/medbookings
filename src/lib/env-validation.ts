@@ -21,14 +21,12 @@ const envSchema = z.object({
 export function validateEnv() {
   try {
     envSchema.parse(process.env);
-    // eslint-disable-next-line no-console
-    console.log('✅ Environment variables validated');
     return true;
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('❌ Environment validation failed');
     if (process.env.NODE_ENV === 'production') {
-      throw new Error('Invalid environment - cannot deploy');
+      throw new Error(
+        'Invalid environment configuration - cannot deploy. Check all required environment variables are set.'
+      );
     }
     return false;
   }

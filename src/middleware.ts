@@ -12,7 +12,7 @@ import { withAuth } from 'next-auth/middleware';
 
 import { createAuditLog } from '@/lib/audit';
 import { logger, sanitizeEmail } from '@/lib/logger';
-import { nowUTC } from '@/lib/timezone';
+import { fromTimestamp, nowUTC, toISOStringUTC } from '@/lib/timezone';
 
 /**
  * Route patterns and their required permissions
@@ -185,8 +185,7 @@ export default withAuth(
       logger.audit('Session timeout due to inactivity', {
         userId: token.sub,
         inactivityMinutes: Math.floor(timeSinceLastActivity / 1000 / 60),
-        // eslint-disable-next-line rulesdir/no-new-date -- Converting known timestamp to ISO string
-        lastActivity: new Date(lastActivityMs).toISOString(),
+        lastActivity: toISOStringUTC(fromTimestamp(lastActivityMs)),
         pathname,
         action: 'SESSION_TIMEOUT',
       });
