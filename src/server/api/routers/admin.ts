@@ -562,6 +562,7 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, admin status reset, idempotent operation
       // Reset the provider to pending approval
       const updatedProvider = await ctx.prisma.provider.update({
         where: { id: input.id },
@@ -629,6 +630,7 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, admin requirement approval, idempotent
       // Approve the requirement
       const updatedSubmission = await ctx.prisma.requirementSubmission.update({
         where: { id: input.requirementId },
@@ -701,6 +703,7 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, admin requirement rejection, terminal state
       // Reject the requirement
       const updatedSubmission = await ctx.prisma.requirementSubmission.update({
         where: { id: input.requirementId },
@@ -877,6 +880,7 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, admin organization approval, idempotent
       // Approve the organization
       const updatedOrganization = await ctx.prisma.organization.update({
         where: { id: input.id },
@@ -933,6 +937,7 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, admin organization rejection, terminal state
       // Reject the organization
       const updatedOrganization = await ctx.prisma.organization.update({
         where: { id: input.id },
@@ -1002,6 +1007,7 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, admin status reset, idempotent operation
       // Reset the organization to pending approval
       const updatedOrganization = await ctx.prisma.organization.update({
         where: { id: input.id },

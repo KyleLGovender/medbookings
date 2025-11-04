@@ -1038,19 +1038,7 @@ export const organizationsRouter = createTRPCRouter({
         select: { id: true },
       });
 
-      // Update invitation with new token and reset expiry
-      const updatedInvitation = await ctx.prisma.providerInvitation.update({
-        where: { id: input.invitationId },
-        data: {
-          token: newToken,
-          expiresAt: newExpiresAt,
-          emailAttempts: { increment: 1 },
-          lastEmailSentAt: nowUTC(),
-          emailDeliveryStatus: 'PENDING',
-        },
-      });
-
-      // Generate and log email
+      // Generate and log email first
       const emailContent = generateInvitationEmail({
         organizationName: invitation.organization.name,
         inviterName: currentUser.name || 'Someone',
@@ -1067,10 +1055,16 @@ export const organizationsRouter = createTRPCRouter({
         type: 'reminder',
       });
 
-      // Update email delivery status to "DELIVERED" for console logging
-      await ctx.prisma.providerInvitation.update({
+      // Update invitation atomically with new token and delivery status
+      const updatedInvitation = await ctx.prisma.providerInvitation.update({
         where: { id: input.invitationId },
-        data: { emailDeliveryStatus: 'DELIVERED' },
+        data: {
+          token: newToken,
+          expiresAt: newExpiresAt,
+          emailAttempts: { increment: 1 },
+          lastEmailSentAt: nowUTC(),
+          emailDeliveryStatus: 'DELIVERED', // Set directly to DELIVERED after logging
+        },
       });
 
       return {
