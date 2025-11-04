@@ -627,6 +627,7 @@ export const organizationsRouter = createTRPCRouter({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Connection not found' });
       }
 
+      // tx-safe: single write, connection status update, org-owned data
       // Update the connection
       const updatedConnection = await ctx.prisma.organizationProviderConnection.update({
         where: {
@@ -732,6 +733,7 @@ export const organizationsRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single delete, validated (no active availability), org-owned data
       // Delete the connection
       await ctx.prisma.organizationProviderConnection.delete({
         where: {
@@ -835,6 +837,7 @@ export const organizationsRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single create, provider invitation, org-owned data
       // Create invitation
       const invitation = await ctx.prisma.providerInvitation.create({
         data: {
@@ -920,6 +923,7 @@ export const organizationsRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, invitation cancellation, terminal state
       // Update invitation status
       const updatedInvitation = await ctx.prisma.providerInvitation.update({
         where: { id: input.invitationId },
@@ -1248,6 +1252,7 @@ export const organizationsRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single create, member invitation, org-owned data
       // Create invitation using business logic data
       const invitation = await ctx.prisma.organizationInvitation.create({
         data: {
@@ -1689,6 +1694,7 @@ export const organizationsRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, invitation cancellation, terminal state
       // Cancel invitation
       const updatedInvitation = await ctx.prisma.organizationInvitation.update({
         where: { id: input.invitationId },

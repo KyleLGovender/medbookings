@@ -779,6 +779,7 @@ export const providersRouter = createTRPCRouter({
         }
       }
 
+      // tx-safe: single write, provider profile update, user-owned data
       // Update provider with automatic type inference
       const updatedProvider = await ctx.prisma.provider.update({
         where: { id: input.id },
@@ -1788,6 +1789,7 @@ export const providersRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, connection status update, provider-owned data
       // Update connection status
       const updatedConnection = await ctx.prisma.organizationProviderConnection.update({
         where: { id: input.connectionId },
@@ -1880,6 +1882,7 @@ export const providersRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single delete, validated (no active availabilities), provider-owned
       // Delete the connection
       await ctx.prisma.organizationProviderConnection.delete({
         where: { id: input.connectionId },
@@ -2357,6 +2360,7 @@ export const providersRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, business settings update, user-owned data
       // Update provider business settings
       const updatedProvider = await ctx.prisma.provider.update({
         where: { id: input.providerId },
@@ -2487,6 +2491,7 @@ export const providersRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: provider update - single write, user-owned data
       // Update provider information
       const updated = await ctx.prisma.provider.update({
         where: { id: provider.id },
@@ -2501,6 +2506,7 @@ export const providersRouter = createTRPCRouter({
         },
       });
 
+      // tx-safe: user update - independent write, user-owned data, optional field
       // Update user phone if provided
       if (input.phone !== undefined) {
         await ctx.prisma.user.update({
@@ -2544,6 +2550,7 @@ export const providersRouter = createTRPCRouter({
         .filter(([_, enabled]) => enabled)
         .map(([channel]) => channel);
 
+      // tx-safe: single write, reminder settings update, user-owned data
       // Update the provider with reminder settings
       const updated = await ctx.prisma.provider.update({
         where: { id: provider.id },
@@ -2609,6 +2616,7 @@ export const providersRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, status suspension, user-owned data
       const updated = await ctx.prisma.provider.update({
         where: { id: provider.id },
         data: { status: 'SUSPENDED' },
@@ -2692,6 +2700,7 @@ export const providersRouter = createTRPCRouter({
         }
       }
 
+      // tx-safe: single write, status reactivation, user-owned data
       const updated = await ctx.prisma.provider.update({
         where: { id: provider.id },
         data: { status: 'ACTIVE' },
@@ -2914,6 +2923,7 @@ export const providersRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single create, provider service, user-owned data
       const service = await ctx.prisma.service.create({
         data: {
           name: input.name,
@@ -2963,6 +2973,7 @@ export const providersRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single update, provider service, user-owned data
       const updated = await ctx.prisma.service.update({
         where: { id: input.serviceId },
         data: {
@@ -3001,6 +3012,7 @@ export const providersRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single delete, provider service, user-owned data
       await ctx.prisma.service.delete({
         where: { id: input.serviceId },
       });
