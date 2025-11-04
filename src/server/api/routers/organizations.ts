@@ -223,6 +223,7 @@ export const organizationsRouter = createTRPCRouter({
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden: Admin access required' });
       }
 
+      // tx-safe: single write, audit log is separate concern (failure shouldn't block organization update)
       const updatedOrganization = await ctx.prisma.organization.update({
         where: { id },
         data: data as Prisma.OrganizationUpdateInput,
@@ -239,7 +240,7 @@ export const organizationsRouter = createTRPCRouter({
         action: 'ORGANIZATION_UPDATE',
       });
 
-      // Also persist to database for compliance reporting
+      // Also persist to database for compliance reporting (best effort, non-blocking)
       await createAuditLog({
         userId: ctx.session.user.id,
         action: 'ORGANIZATION_UPDATED',
@@ -282,6 +283,7 @@ export const organizationsRouter = createTRPCRouter({
         select: { id: true, name: true },
       });
 
+      // tx-safe: single delete, cascading handled by database constraints
       await ctx.prisma.organization.delete({
         where: { id: input.id },
       });
@@ -417,6 +419,7 @@ export const organizationsRouter = createTRPCRouter({
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Forbidden: Admin access required' });
       }
 
+      // tx-safe: single create, location belongs to organization (validated)
       const location = await ctx.prisma.location.create({
         data: {
           ...locationData,
@@ -1459,6 +1462,7 @@ export const organizationsRouter = createTRPCRouter({
         });
       }
 
+      // tx-safe: single write, terminal status, no dependent operations
       // Update invitation status
       const updatedInvitation = await ctx.prisma.organizationInvitation.update({
         where: { id: invitation.id },
@@ -1531,6 +1535,7 @@ export const organizationsRouter = createTRPCRouter({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot change your own role' });
       }
 
+      // tx-safe: single write, role change only, validated by business logic
       // Update role
       const updatedMembership = await ctx.prisma.organizationMembership.update({
         where: { id: input.memberId },
@@ -1620,6 +1625,7 @@ export const organizationsRouter = createTRPCRouter({
         }
       }
 
+      // tx-safe: single delete, validated by business logic (owner count check)
       // Remove member
       await ctx.prisma.organizationMembership.delete({
         where: { id: input.memberId },
