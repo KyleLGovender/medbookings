@@ -1542,70 +1542,79 @@ export const providersRouter = createTRPCRouter({
         (req) => req && req.requirementTypeId && (req.value !== undefined || req.documentMetadata)
       );
 
-      // Track if any requirements were changed
-      let requirementsChanged = false;
+      // Use transaction to ensure atomic requirement updates and provider status change
+      await ctx.prisma.$transaction(
+        async (tx) => {
+          // Track if any requirements were changed
+          let requirementsChanged = false;
 
-      // Process each requirement submission
-      for (const req of validRequirements) {
-        // Check if a submission already exists for this requirement type
-        const existingSubmission = currentProvider.requirementSubmissions.find(
-          (sub) => sub.requirementTypeId === req.requirementTypeId
-        );
+          // Process each requirement submission
+          for (const req of validRequirements) {
+            // Check if a submission already exists for this requirement type
+            const existingSubmission = currentProvider.requirementSubmissions.find(
+              (sub) => sub.requirementTypeId === req.requirementTypeId
+            );
 
-        // Prepare the document metadata
-        let documentMetadata = req.documentMetadata || {};
-        if (req.value !== undefined && !documentMetadata.value) {
-          documentMetadata.value = req.value;
-        }
+            // Prepare the document metadata
+            let documentMetadata = req.documentMetadata || {};
+            if (req.value !== undefined && !documentMetadata.value) {
+              documentMetadata.value = req.value;
+            }
 
-        if (existingSubmission) {
-          // Check if the document has changed
-          const hasChanged =
-            JSON.stringify(documentMetadata) !==
-            JSON.stringify(existingSubmission.documentMetadata);
+            if (existingSubmission) {
+              // Check if the document has changed
+              const hasChanged =
+                JSON.stringify(documentMetadata) !==
+                JSON.stringify(existingSubmission.documentMetadata);
 
-          if (hasChanged) {
-            requirementsChanged = true;
-            // Update existing submission - only update status if content changed
-            await ctx.prisma.requirementSubmission.update({
-              where: { id: existingSubmission.id },
+              if (hasChanged) {
+                requirementsChanged = true;
+                // Update existing submission - only update status if content changed
+                await tx.requirementSubmission.update({
+                  where: { id: existingSubmission.id },
+                  data: {
+                    documentMetadata,
+                    // Only reset to pending if the document was actually updated
+                    status: 'PENDING',
+                    notes: null,
+                  },
+                });
+              }
+              // If not changed, we don't update anything - status remains as is
+            } else {
+              // Create new submission
+              requirementsChanged = true;
+              await tx.requirementSubmission.create({
+                data: {
+                  requirementTypeId: req.requirementTypeId,
+                  providerId: input.id,
+                  documentMetadata,
+                  status: 'PENDING',
+                },
+              });
+            }
+          }
+
+          // If any requirements were changed, reset the provider status to PENDING_APPROVAL
+          if (requirementsChanged) {
+            await tx.provider.update({
+              where: { id: input.id },
               data: {
-                documentMetadata,
-                // Only reset to pending if the document was actually updated
-                status: 'PENDING',
-                notes: null,
+                status: 'PENDING_APPROVAL',
+                // Clear any previous approval/rejection data
+                approvedAt: null,
+                approvedById: null,
+                rejectedAt: null,
+                rejectionReason: null,
               },
             });
           }
-          // If not changed, we don't update anything - status remains as is
-        } else {
-          // Create new submission
-          requirementsChanged = true;
-          await ctx.prisma.requirementSubmission.create({
-            data: {
-              requirementTypeId: req.requirementTypeId,
-              providerId: input.id,
-              documentMetadata,
-              status: 'PENDING',
-            },
-          });
+        },
+        {
+          maxWait: 10000,
+          timeout: 20000,
         }
-      }
-
-      // If any requirements were changed, reset the provider status to PENDING_APPROVAL
-      if (requirementsChanged) {
-        await ctx.prisma.provider.update({
-          where: { id: input.id },
-          data: {
-            status: 'PENDING_APPROVAL',
-            // Clear any previous approval/rejection data
-            approvedAt: null,
-            approvedById: null,
-            rejectedAt: null,
-            rejectionReason: null,
-          },
-        });
-      }
+      );
 
       // Get updated provider data with automatic type inference
       const updatedProvider = await ctx.prisma.provider.findUnique({
@@ -1941,6 +1950,7 @@ export const providersRouter = createTRPCRouter({
       );
 
       if (expiredInvitations.length > 0) {
+        // tx-safe: bulk status update, no dependent operations, idempotent
         await ctx.prisma.providerInvitation.updateMany({
           where: {
             id: { in: expiredInvitations.map((inv) => inv.id) },
@@ -2042,6 +2052,7 @@ export const providersRouter = createTRPCRouter({
 
       // Check if invitation has expired
       if (nowUTC() > invitation.expiresAt) {
+        // tx-safe: single status update before throwing error, idempotent
         await ctx.prisma.providerInvitation.update({
           where: { id: invitation.id },
           data: { status: 'EXPIRED' },
@@ -2083,6 +2094,7 @@ export const providersRouter = createTRPCRouter({
       }
 
       if (input.action === 'reject') {
+        // tx-safe: single write, rejection is terminal state, no dependent operations
         // Update invitation status to rejected
         const updatedInvitation = await ctx.prisma.providerInvitation.update({
           where: { id: invitation.id },
@@ -2732,86 +2744,99 @@ export const providersRouter = createTRPCRouter({
       // Check if this is an existing submission or new one
       const existingSubmission = provider.requirementSubmissions[0];
 
-      let submission;
-      let requirementTypeName: string;
-      let action: 'created' | 'updated';
+      // Use transaction to ensure atomic requirement submission and provider status update
+      const result = await ctx.prisma.$transaction(
+        async (tx) => {
+          let submission;
+          let requirementTypeName: string;
+          let action: 'created' | 'updated';
 
-      if (existingSubmission) {
-        // Update existing submission
-        // Handle different requirement types - documentUrl for documents, value for others
-        let metadata;
-        if (input.documentUrl) {
-          metadata = input.documentMetadata || { url: input.documentUrl };
-        } else if (input.value !== undefined) {
-          metadata = input.documentMetadata || { value: input.value };
-        } else {
-          metadata = input.documentMetadata || {};
+          if (existingSubmission) {
+            // Update existing submission
+            // Handle different requirement types - documentUrl for documents, value for others
+            let metadata;
+            if (input.documentUrl) {
+              metadata = input.documentMetadata || { url: input.documentUrl };
+            } else if (input.value !== undefined) {
+              metadata = input.documentMetadata || { value: input.value };
+            } else {
+              metadata = input.documentMetadata || {};
+            }
+
+            submission = await tx.requirementSubmission.update({
+              where: { id: existingSubmission.id },
+              data: {
+                documentMetadata: metadata,
+                notes: input.notes,
+                status: 'PENDING', // Reset to pending for review
+                updatedAt: nowUTC(),
+              },
+              include: { requirementType: true },
+            });
+            requirementTypeName = submission.requirementType.name;
+            action = 'updated';
+
+            // Suspend provider status when updating requirements
+            await tx.provider.update({
+              where: { id: provider.id },
+              data: { status: 'SUSPENDED' },
+            });
+          } else {
+            // Extract requirementTypeId from the prefixed ID
+            const requirementTypeId = input.requirementId.replace('req-', '');
+
+            // Get the requirement type details
+            const requirementType = await tx.requirementType.findUnique({
+              where: { id: requirementTypeId },
+            });
+
+            if (!requirementType) {
+              throw new TRPCError({
+                code: 'NOT_FOUND',
+                message: 'Requirement type not found',
+              });
+            }
+
+            // Create new submission
+            // Handle different requirement types - documentUrl for documents, value for others
+            let metadata;
+            if (input.documentUrl) {
+              metadata = input.documentMetadata || { url: input.documentUrl };
+            } else if (input.value !== undefined) {
+              metadata = input.documentMetadata || { value: input.value };
+            } else {
+              metadata = input.documentMetadata || {};
+            }
+
+            submission = await tx.requirementSubmission.create({
+              data: {
+                providerId: provider.id,
+                requirementTypeId,
+                documentMetadata: metadata,
+                notes: input.notes,
+                status: 'PENDING',
+              },
+              include: { requirementType: true },
+            });
+            requirementTypeName = submission.requirementType.name;
+            action = 'created';
+
+            // Suspend provider status when submitting new requirements
+            await tx.provider.update({
+              where: { id: provider.id },
+              data: { status: 'SUSPENDED' },
+            });
+          }
+
+          return { submission, requirementTypeName, action };
+        },
+        {
+          maxWait: 10000,
+          timeout: 20000,
         }
+      );
 
-        submission = await ctx.prisma.requirementSubmission.update({
-          where: { id: existingSubmission.id },
-          data: {
-            documentMetadata: metadata,
-            notes: input.notes,
-            status: 'PENDING', // Reset to pending for review
-            updatedAt: nowUTC(),
-          },
-          include: { requirementType: true },
-        });
-        requirementTypeName = submission.requirementType.name;
-        action = 'updated';
-
-        // Suspend provider status when updating requirements
-        await ctx.prisma.provider.update({
-          where: { id: provider.id },
-          data: { status: 'SUSPENDED' },
-        });
-      } else {
-        // Extract requirementTypeId from the prefixed ID
-        const requirementTypeId = input.requirementId.replace('req-', '');
-
-        // Get the requirement type details
-        const requirementType = await ctx.prisma.requirementType.findUnique({
-          where: { id: requirementTypeId },
-        });
-
-        if (!requirementType) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Requirement type not found',
-          });
-        }
-
-        // Create new submission
-        // Handle different requirement types - documentUrl for documents, value for others
-        let metadata;
-        if (input.documentUrl) {
-          metadata = input.documentMetadata || { url: input.documentUrl };
-        } else if (input.value !== undefined) {
-          metadata = input.documentMetadata || { value: input.value };
-        } else {
-          metadata = input.documentMetadata || {};
-        }
-
-        submission = await ctx.prisma.requirementSubmission.create({
-          data: {
-            providerId: provider.id,
-            requirementTypeId,
-            documentMetadata: metadata,
-            notes: input.notes,
-            status: 'PENDING',
-          },
-          include: { requirementType: true },
-        });
-        requirementTypeName = submission.requirementType.name;
-        action = 'created';
-
-        // Suspend provider status when submitting new requirements
-        await ctx.prisma.provider.update({
-          where: { id: provider.id },
-          data: { status: 'SUSPENDED' },
-        });
-      }
+      const { submission, requirementTypeName, action } = result;
 
       // Import email functions and template
       const { sendAdminNotificationEmail } = await import('@/lib/communications/email');
