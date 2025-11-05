@@ -669,3 +669,498 @@ If you believe this email was sent to you in error, please ignore it.
 
   return { subject, html, text };
 }
+
+/**
+ * Welcome member email template (sent after accepting invitation)
+ */
+export interface WelcomeMemberData {
+  organizationName: string;
+  memberName: string;
+  role: string;
+  dashboardUrl: string;
+}
+
+export function getWelcomeMemberTemplate(data: WelcomeMemberData): TemplateData {
+  const subject = `Welcome to ${data.organizationName}!`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Welcome to Organization</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #059669; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background-color: #f0fdf4; padding: 30px; border-radius: 0 0 8px 8px; }
+        .welcome-box { background-color: white; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #059669; }
+        .cta-button { background-color: #059669; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; font-size: 16px; font-weight: bold; }
+        .button-container { text-align: center; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #d1fae5; font-size: 14px; color: #374151; text-align: center; }
+        h1 { margin: 0; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🎉 Welcome Aboard!</h1>
+        <p style="font-size: 18px; margin-top: 10px;">You're now part of ${data.organizationName}</p>
+      </div>
+
+      <div class="content">
+        <p>Hello ${data.memberName},</p>
+
+        <p>Congratulations! You've successfully joined <strong>${data.organizationName}</strong> as a <strong>${data.role}</strong>.</p>
+
+        <div class="welcome-box">
+          <h3>🚀 Getting Started</h3>
+          <ul>
+            <li>Access your organization dashboard to view schedules and appointments</li>
+            <li>Set up your availability and calendar preferences</li>
+            <li>Collaborate with other team members</li>
+            <li>Manage bookings and patient appointments</li>
+          </ul>
+        </div>
+
+        <div class="button-container">
+          <a href="${data.dashboardUrl}" class="cta-button">Go to Dashboard</a>
+        </div>
+
+        <p>If you have any questions or need assistance, don't hesitate to reach out to your organization administrator.</p>
+
+        <div class="footer">
+          <p>© ${nowUTC().getFullYear()} MedBookings. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+Welcome to ${data.organizationName}!
+===================================
+
+Hello ${data.memberName},
+
+Congratulations! You've successfully joined ${data.organizationName} as a ${data.role}.
+
+Getting Started:
+- Access your organization dashboard to view schedules and appointments
+- Set up your availability and calendar preferences
+- Collaborate with other team members
+- Manage bookings and patient appointments
+
+Dashboard: ${data.dashboardUrl}
+
+If you have any questions or need assistance, don't hesitate to reach out to your organization administrator.
+
+© ${nowUTC().getFullYear()} MedBookings. All rights reserved.
+  `;
+
+  return { subject, html, text };
+}
+
+/**
+ * Invitation rejected notification (sent to inviter)
+ */
+export interface InvitationRejectedData {
+  organizationName: string;
+  inviterName: string;
+  recipientEmail: string;
+  rejectedAt: Date;
+}
+
+export function getInvitationRejectedTemplate(data: InvitationRejectedData): TemplateData {
+  const rejectionDate = data.rejectedAt.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const subject = `Invitation to ${data.organizationName} was declined`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Invitation Declined</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #64748b; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background-color: #f8fafc; padding: 30px; border-radius: 0 0 8px 8px; }
+        .info-box { background-color: white; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #64748b; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #64748b; text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Invitation Declined</h1>
+        <p style="font-size: 16px; margin-top: 10px;">Organization invitation was not accepted</p>
+      </div>
+
+      <div class="content">
+        <p>Hello ${data.inviterName},</p>
+
+        <p>We wanted to let you know that your invitation to join <strong>${data.organizationName}</strong> has been declined.</p>
+
+        <div class="info-box">
+          <p><strong>Declined by:</strong> ${data.recipientEmail}</p>
+          <p><strong>Date:</strong> ${rejectionDate}</p>
+        </div>
+
+        <p>If you believe this was a mistake or would like to send another invitation, you can do so from your organization's member management page.</p>
+
+        <div class="footer">
+          <p>© ${nowUTC().getFullYear()} MedBookings. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+Invitation Declined
+==================
+
+Hello ${data.inviterName},
+
+Your invitation to join ${data.organizationName} has been declined.
+
+Declined by: ${data.recipientEmail}
+Date: ${rejectionDate}
+
+If you believe this was a mistake or would like to send another invitation, you can do so from your organization's member management page.
+
+© ${nowUTC().getFullYear()} MedBookings. All rights reserved.
+  `;
+
+  return { subject, html, text };
+}
+
+/**
+ * Role changed notification (sent to member whose role was updated)
+ */
+export interface RoleChangedData {
+  organizationName: string;
+  memberName: string;
+  oldRole: string;
+  newRole: string;
+  changedBy: string;
+}
+
+export function getRoleChangedTemplate(data: RoleChangedData): TemplateData {
+  const subject = `Your role in ${data.organizationName} has been updated`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Role Updated</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2563eb; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background-color: #f8fafc; padding: 30px; border-radius: 0 0 8px 8px; }
+        .role-box { background-color: white; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb; }
+        .role-change { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 20px 0; }
+        .role-badge { background-color: #dbeafe; color: #1e40af; padding: 8px 16px; border-radius: 6px; font-weight: bold; }
+        .arrow { font-size: 24px; color: #2563eb; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #64748b; text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🔄 Role Updated</h1>
+        <p style="font-size: 16px; margin-top: 10px;">Your permissions have changed</p>
+      </div>
+
+      <div class="content">
+        <p>Hello ${data.memberName},</p>
+
+        <p>Your role in <strong>${data.organizationName}</strong> has been updated by ${data.changedBy}.</p>
+
+        <div class="role-box">
+          <h3 style="text-align: center; color: #1e40af;">Role Change</h3>
+          <div class="role-change">
+            <span class="role-badge">${data.oldRole}</span>
+            <span class="arrow">→</span>
+            <span class="role-badge">${data.newRole}</span>
+          </div>
+        </div>
+
+        <p>This change may affect your permissions and access to certain features within the organization. If you have any questions about your new role, please contact your organization administrator.</p>
+
+        <div class="footer">
+          <p>© ${nowUTC().getFullYear()} MedBookings. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+Role Updated
+============
+
+Hello ${data.memberName},
+
+Your role in ${data.organizationName} has been updated by ${data.changedBy}.
+
+Role Change:
+${data.oldRole} → ${data.newRole}
+
+This change may affect your permissions and access to certain features within the organization. If you have any questions about your new role, please contact your organization administrator.
+
+© ${nowUTC().getFullYear()} MedBookings. All rights reserved.
+  `;
+
+  return { subject, html, text };
+}
+
+/**
+ * Member removed notification (sent to removed member)
+ */
+export interface MemberRemovedData {
+  organizationName: string;
+  memberName: string;
+  removedBy: string;
+}
+
+export function getMemberRemovedTemplate(data: MemberRemovedData): TemplateData {
+  const subject = `You have been removed from ${data.organizationName}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Organization Membership Ended</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #64748b; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background-color: #f8fafc; padding: 30px; border-radius: 0 0 8px 8px; }
+        .info-box { background-color: white; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #64748b; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #64748b; text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Organization Membership Ended</h1>
+        <p style="font-size: 16px; margin-top: 10px;">You are no longer a member</p>
+      </div>
+
+      <div class="content">
+        <p>Hello ${data.memberName},</p>
+
+        <p>This is to inform you that you have been removed from <strong>${data.organizationName}</strong> by ${data.removedBy}.</p>
+
+        <div class="info-box">
+          <h3>What this means:</h3>
+          <ul>
+            <li>You no longer have access to the organization's resources</li>
+            <li>You cannot view or manage organization appointments</li>
+            <li>Your personal MedBookings account remains active</li>
+          </ul>
+        </div>
+
+        <p>If you believe this was done in error or have questions, please contact the organization administrator at ${data.removedBy}.</p>
+
+        <div class="footer">
+          <p>© ${nowUTC().getFullYear()} MedBookings. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+Organization Membership Ended
+==============================
+
+Hello ${data.memberName},
+
+You have been removed from ${data.organizationName} by ${data.removedBy}.
+
+What this means:
+- You no longer have access to the organization's resources
+- You cannot view or manage organization appointments
+- Your personal MedBookings account remains active
+
+If you believe this was done in error or have questions, please contact the organization administrator.
+
+© ${nowUTC().getFullYear()} MedBookings. All rights reserved.
+  `;
+
+  return { subject, html, text };
+}
+
+/**
+ * Invitation cancelled notification (sent to cancelled invitee)
+ */
+export interface InvitationCancelledData {
+  organizationName: string;
+  recipientEmail: string;
+}
+
+export function getInvitationCancelledTemplate(data: InvitationCancelledData): TemplateData {
+  const subject = `Invitation to ${data.organizationName} has been cancelled`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Invitation Cancelled</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #64748b; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background-color: #f8fafc; padding: 30px; border-radius: 0 0 8px 8px; }
+        .info-box { background-color: white; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #64748b; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #64748b; text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Invitation Cancelled</h1>
+        <p style="font-size: 16px; margin-top: 10px;">Organization invitation no longer valid</p>
+      </div>
+
+      <div class="content">
+        <p>Hello,</p>
+
+        <p>The invitation to join <strong>${data.organizationName}</strong> has been cancelled by the organization administrator.</p>
+
+        <div class="info-box">
+          <p>The invitation link you may have received is no longer valid and cannot be used to join the organization.</p>
+        </div>
+
+        <p>If you believe this was done in error or have questions, please contact the organization directly.</p>
+
+        <div class="footer">
+          <p>This notification was sent to ${data.recipientEmail}</p>
+          <p>© ${nowUTC().getFullYear()} MedBookings. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+Invitation Cancelled
+====================
+
+Hello,
+
+The invitation to join ${data.organizationName} has been cancelled by the organization administrator.
+
+The invitation link you may have received is no longer valid and cannot be used to join the organization.
+
+If you believe this was done in error or have questions, please contact the organization directly.
+
+This notification was sent to ${data.recipientEmail}
+
+© ${nowUTC().getFullYear()} MedBookings. All rights reserved.
+  `;
+
+  return { subject, html, text };
+}
+
+/**
+ * Organization registration welcome email (sent to organization creator)
+ */
+export interface OrganizationRegisteredData {
+  organizationName: string;
+  creatorName: string;
+  dashboardUrl: string;
+}
+
+export function getOrganizationRegisteredTemplate(data: OrganizationRegisteredData): TemplateData {
+  const subject = `Welcome to MedBookings - ${data.organizationName} Created Successfully`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Organization Created</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #059669; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background-color: #f0fdf4; padding: 30px; border-radius: 0 0 8px 8px; }
+        .steps-box { background-color: white; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #059669; }
+        .cta-button { background-color: #059669; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; font-size: 16px; font-weight: bold; }
+        .button-container { text-align: center; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #d1fae5; font-size: 14px; color: #374151; text-align: center; }
+        h1 { margin: 0; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🎉 Organization Created!</h1>
+        <p style="font-size: 18px; margin-top: 10px;">Welcome to MedBookings</p>
+      </div>
+
+      <div class="content">
+        <p>Hello ${data.creatorName},</p>
+
+        <p>Congratulations! Your organization <strong>${data.organizationName}</strong> has been successfully created on MedBookings.</p>
+
+        <div class="steps-box">
+          <h3>🚀 Next Steps</h3>
+          <ol>
+            <li><strong>Set up your organization profile</strong> - Add locations, services, and branding</li>
+            <li><strong>Invite team members</strong> - Collaborate with providers and staff</li>
+            <li><strong>Configure availability</strong> - Set up your scheduling and booking preferences</li>
+            <li><strong>Go live!</strong> - Start accepting appointments from patients</li>
+          </ol>
+        </div>
+
+        <div class="button-container">
+          <a href="${data.dashboardUrl}" class="cta-button">Go to Organization Dashboard</a>
+        </div>
+
+        <p>If you need help getting started or have any questions, our support team is here to assist you.</p>
+
+        <div class="footer">
+          <p><strong>MedBookings</strong></p>
+          <p>Making healthcare appointments simple and convenient</p>
+          <p>© ${nowUTC().getFullYear()} MedBookings. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+Organization Created Successfully!
+==================================
+
+Hello ${data.creatorName},
+
+Congratulations! Your organization ${data.organizationName} has been successfully created on MedBookings.
+
+Next Steps:
+1. Set up your organization profile - Add locations, services, and branding
+2. Invite team members - Collaborate with providers and staff
+3. Configure availability - Set up your scheduling and booking preferences
+4. Go live! - Start accepting appointments from patients
+
+Dashboard: ${data.dashboardUrl}
+
+If you need help getting started or have any questions, our support team is here to assist you.
+
+MedBookings
+Making healthcare appointments simple and convenient
+
+© ${nowUTC().getFullYear()} MedBookings. All rights reserved.
+  `;
+
+  return { subject, html, text };
+}

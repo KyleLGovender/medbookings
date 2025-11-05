@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { useDeleteProvider } from '@/features/providers/hooks/use-provider-delete';
+import { useAdminDeleteProvider } from '@/features/admin/hooks/use-admin-delete-provider';
 import { useNavigation } from '@/hooks/use-navigation';
 import { logger } from '@/lib/logger';
 
@@ -25,7 +25,7 @@ interface DeleteProviderButtonProps {
 
 export function DeleteProviderButton({ providerId }: DeleteProviderButtonProps) {
   const { navigate } = useNavigation();
-  const deleteProviderMutation = useDeleteProvider();
+  const deleteProviderMutation = useAdminDeleteProvider();
 
   const handleDelete = async () => {
     try {

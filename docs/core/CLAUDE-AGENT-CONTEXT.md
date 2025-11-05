@@ -1,760 +1,847 @@
 # MedBookings Codebase Context
 
-**Purpose**: Fast context loading for AI assistants analyzing the codebase
-**Last Updated**: 2025-10-14 (Full Refresh)
-**Context Hash**: `a7f3e9d2c5b8h4k1`
-**Maintained By**: Claude Code (auto-updated after changes)
+**Last Updated**: 2025-11-05
+**Purpose**: Cached codebase knowledge for Claude Code (reduces analysis from ~72k to ~15k tokens)
+**Status**: ✅ Current (refreshed via full scan)
 
 ---
 
-## 📊 Quick Statistics
+## 1. Project Overview
 
-- **Routes**: 39 Next.js pages (App Router)
-- **Components**: 77 total (47 shadcn/ui + 30 custom components)
-- **Feature Modules**: 11 active (admin, auth, billing, calendar, communications, invitations, organizations, profile, providers, reviews, settings)
-- **API Routers**: 10 tRPC routers (117 total procedures: 112 active across 9 routers, 5 inactive in billing)
-- **Database Models**: 33 Prisma models (1069 lines)
-- **Database Enums**: 36 enums
-- **TypeScript Files**: 409 total (206 in features/, 77 in components/)
-- **E2E Tests**: 11 Playwright test suites
-- **Compliance Docs**: 10 comprehensive guides
-- **Custom ESLint Rules**: 8 enforcement rules
-- **Timezone Utility Usage**: 244 instances (enforced)
+### Tech Stack (Production)
+```json
+{
+  "framework": "Next.js 14.2.15 (App Router)",
+  "api": "tRPC 11.4.3",
+  "database": "PostgreSQL + Prisma 5.22.0",
+  "auth": "NextAuth.js 4.24.10",
+  "ui": "Radix UI + Tailwind CSS + shadcn/ui",
+  "state": "TanStack Query 5.60.6 (via tRPC)",
+  "validation": "Zod 3.25.48",
+  "testing": "Playwright 1.54.1 (e2e only)",
+  "deployment": "Vercel",
+  "monitoring": "Vercel Analytics + Speed Insights"
+}
+```
+
+### Key Dependencies
+- **Communication**: SendGrid (@sendgrid/mail), Twilio, Nodemailer
+- **Calendar**: Google APIs (googleapis 148.0.0), date-fns 3.6.0, date-fns-tz 3.2.0
+- **Storage**: Vercel Blob (@vercel/blob 2.0.0)
+- **Rate Limiting**: Upstash Redis (@upstash/ratelimit 2.0.6)
+- **Maps**: @react-google-maps/api 2.20.7
+- **Security**: bcryptjs 3.0.2 (password hashing)
+
+### Business Domain
+**Healthcare appointment management platform for South Africa**
+- POPIA-compliant (South African data protection)
+- Timezone: Africa/Johannesburg (UTC+2, no DST)
+- Multi-tenant: Providers + Organizations + Clients
+- Billing: Slot-based subscriptions with tiered overage pricing
 
 ---
 
-## 🎯 Critical Files (Read These for Deep Analysis)
+## 2. Database Schema (Prisma)
 
-### Architecture Foundation (7 files)
-```
-/prisma/schema.prisma (1069 lines)        # Database schema - source of truth
-/src/lib/auth.ts (500 lines)              # Authentication & authorization
-/src/server/trpc.ts (165 lines)           # tRPC configuration & procedures
-/src/server/api/root.ts (33 lines)        # API router registry
-/src/utils/api.ts (22 lines)              # tRPC client & type exports
-/src/middleware.ts (253 lines)            # Route protection & RBAC
-/CLAUDE.md (30KB, 835 lines)              # Master compliance rules
-```
+### Core Entities
 
-### Configuration (6 files)
-```
-/package.json                              # Dependencies & scripts
-/tsconfig.json                             # TypeScript configuration
-/.eslintrc.js                              # ESLint + custom compliance rules
-/next.config.mjs                           # Next.js configuration
-/.env.example                              # Environment variables template
-/.husky/pre-commit                         # Pre-commit compliance validation
+#### User (Authentication & Profile)
+```prisma
+model User {
+  id: String @id @default(cuid())
+  email: String? @unique
+  emailVerified: DateTime?
+  role: UserRole @default(USER)  // USER | ADMIN | SUPER_ADMIN
+  password: String?  // bcrypt hashed
+  passwordMigratedAt: DateTime?  // SHA-256 → bcrypt migration tracking
+  passwordMigrationDeadline: DateTime?  // 90 days from creation
+  accountLockedUntil: DateTime?  // Rate limiting lockouts
+  
+  // Relations: provider, bookings, organizations, reviews, etc.
+}
 ```
 
-### Key Utilities (5 files)
+#### Provider
+```prisma
+model Provider {
+  id: String @id
+  userId: String @unique
+  name: String
+  status: ProviderStatus @default(PENDING_APPROVAL)
+  // PENDING_APPROVAL → APPROVED → TRIAL → ACTIVE | REJECTED
+  approvedById: String?
+  approvedAt: DateTime?
+  rejectionReason: String?
+  
+  trialStarted: DateTime?
+  trialEnded: DateTime?
+  trialStatus: TrialStatus?
+  
+  // Relations: availabilities, services, subscriptions, typeAssignments
+}
 ```
-/src/lib/timezone.ts                       # POPIA-compliant timezone handling
-/src/lib/logger.ts                         # PHI-safe structured logging
-/src/lib/audit.ts                          # Compliance audit trail
-/src/lib/prisma.ts                         # Database client singleton
-/src/lib/rate-limit.ts                     # Upstash Redis rate limiting
+
+#### Organization
+```prisma
+model Organization {
+  id: String @id
+  name: String
+  status: OrganizationStatus @default(PENDING_APPROVAL)
+  billingModel: OrganizationBillingModel @default(CONSOLIDATED)
+  // CONSOLIDATED | PER_LOCATION
+  
+  // Relations: locations, memberships, providerConnections
+}
+```
+
+#### Availability & Booking Flow
+```prisma
+Availability {
+  providerId: String
+  organizationId: String?  // If organization-created
+  status: AvailabilityStatus  // PENDING | ACCEPTED | REJECTED
+  startTime/endTime: DateTime  // UTC storage
+  isRecurring: Boolean
+  recurrencePattern: Json?  // { frequency, interval, daysOfWeek, until }
+  
+  // → generates CalculatedAvailabilitySlot[]
+}
+
+CalculatedAvailabilitySlot {
+  availabilityId: String
+  serviceId: String
+  status: SlotStatus  // AVAILABLE | BOOKED | BLOCKED | INVALID
+  blockedByEventId: String?  // Google Calendar event blocking slot
+  
+  // → booking: Booking? (one-to-one)
+}
+
+Booking {
+  slotId: String? @unique
+  status: BookingStatus  // PENDING → CONFIRMED → COMPLETED/CANCELLED/NO_SHOW
+  isGuestBooking: Boolean
+  guestName/guestEmail/guestPhone: String?  // For non-registered users
+  price: Decimal
+  isOnline: Boolean
+  meetLink: String?  // Auto-generated Google Meet link
+}
+```
+
+#### Calendar Integration
+```prisma
+CalendarIntegration {
+  providerId: String @unique
+  calendarProvider: String  // "GOOGLE"
+  accessToken/refreshToken: String
+  syncDirection: CalendarSyncDirection  // BIDIRECTIONAL | IMPORT_ONLY | EXPORT_ONLY
+  autoCreateMeetLinks: Boolean
+  syncIntervalMinutes: Int @default(15)
+  
+  // Webhook support for real-time sync
+  webhookChannelId: String?
+  webhookExpiresAt: DateTime?
+}
+
+CalendarEvent {
+  externalEventId: String  // Google Calendar event ID
+  blocksAvailability: Boolean
+  syncStatus: CalendarEventSyncStatus
+  
+  // → blockedSlots: CalculatedAvailabilitySlot[]
+}
+```
+
+#### Subscription & Billing
+```prisma
+Subscription {
+  organizationId: String? OR providerId: String?
+  type: SubscriptionType  // BASE | WEBSITE_HOSTING | REVIEW_PROMOTION
+  status: SubscriptionStatus  // ACTIVE | TRIALING | PAST_DUE | CANCELLED
+  planId: String
+  
+  currentMonthSlots: Int  // Usage tracking
+  billingCycleStart/End: DateTime
+  
+  // → billedSlots: CalculatedAvailabilitySlot[]
+}
+
+SubscriptionPlan {
+  basePrice: Decimal  // e.g., R300
+  includedSlots: Int @default(30)
+  tierPricing: Json  // { "31-50": 5, "51-100": 4, "101+": 3 }
+}
+```
+
+### Key Enums (Import from @prisma/client)
+```typescript
+// Import pattern: import { UserRole, ProviderStatus } from '@prisma/client';
+
+UserRole: USER | ADMIN | SUPER_ADMIN
+ProviderStatus: PENDING_APPROVAL | REJECTED | APPROVED | TRIAL | TRIAL_EXPIRED | ACTIVE | PAYMENT_OVERDUE | SUSPENDED | CANCELLED
+OrganizationStatus: (same as ProviderStatus)
+AvailabilityStatus: PENDING | ACCEPTED | REJECTED
+SlotStatus: AVAILABLE | BOOKED | BLOCKED | INVALID
+BookingStatus: PENDING | CONFIRMED | CANCELLED | COMPLETED | NO_SHOW
+SchedulingRule: CONTINUOUS | ON_THE_HOUR | ON_THE_HALF_HOUR
+Languages: English | IsiZulu | IsiXhosa | Afrikaans | ... (11 SA languages)
+```
+
+### Indexes (Performance-Critical)
+```prisma
+@@index([providerId, startTime, endTime])  // Availability lookups
+@@index([startTime, status, serviceId])    // Slot searches
+@@index([status])                          // Admin filtering
+@@index([userId, createdAt])               // Audit trails
 ```
 
 ---
 
-## 🏗️ Technical Architecture
+## 3. API Architecture (tRPC)
 
-### Core Stack
-- **Framework**: Next.js 14.2.15 (App Router)
-- **Language**: TypeScript 5.6.3 (strict mode)
-- **API**: tRPC 11.4.3 (type-safe, replaces REST)
-- **Database**: PostgreSQL + Prisma ORM 5.22.0
-- **Auth**: NextAuth.js 4.24.10 (Google OAuth + Credentials)
-- **UI**: Radix UI + Tailwind CSS + shadcn/ui
-- **State**: TanStack Query 5.60 (via tRPC)
-- **Validation**: Zod 3.25.48
-- **Testing**: Playwright 1.54.1 (E2E only)
-- **Deployment**: Vercel (primary), Docker (local)
-
-### Data Flow Pattern
+### Router Structure (`src/server/api/root.ts`)
+```typescript
+export const appRouter = createTRPCRouter({
+  admin: adminRouter,           // 1084 lines - provider/org approval, analytics
+  auth: authRouter,             //  383 lines - login, registration, verification
+  billing: billingRouter,       //  253 lines - subscriptions, payments, usage
+  calendar: calendarRouter,     // 2555 lines - availability, bookings, slots
+  communications: communicationsRouter,  //   22 lines - email/SMS endpoints
+  debug: debugRouter,           //   20 lines - development utilities
+  organizations: organizationsRouter,    // 1714 lines - org management, invitations
+  profile: profileRouter,       //  195 lines - user profile CRUD
+  providers: providersRouter,   // 3132 lines - provider onboarding, services
+  settings: settingsRouter,     //  371 lines - user preferences
+});
 ```
-Client Component
-  ↓ (tRPC hook)
-API Route (tRPC)
-  ↓ (Prisma query)
-PostgreSQL Database
-  ↓ (returns data)
-tRPC Response
-  ↓ (type-safe)
-Client Component
+
+### Procedure Types (`src/server/trpc.ts`)
+```typescript
+publicProcedure        // No auth required
+protectedProcedure     // Requires authentication (ctx.session.user guaranteed)
+adminProcedure         // Requires ADMIN or SUPER_ADMIN role
+superAdminProcedure    // Requires SUPER_ADMIN role
+rateLimitedProcedure   // 100 req/min (Upstash Redis)
+authRateLimitedProcedure  // 5 req/15min (brute force protection)
+```
+
+### Middleware & Context
+```typescript
+// src/server/trpc.ts:44-58
+createTRPCContext: {
+  session: Session | null,
+  prisma: PrismaClient,
+  req: Request,
+  requestId: string  // UUID for tracing
+}
+
+// Rate limiting uses Upstash Redis (production-required)
+// IP extraction: x-forwarded-for, x-real-ip, cf-connecting-ip
+```
+
+### Type Extraction Pattern (REQUIRED)
+```typescript
+// ✅ CORRECT - Extract types from tRPC router outputs
+import { type RouterOutputs } from '@/utils/api';
+
+type AdminProvider = RouterOutputs['admin']['getProviderById'];
+type ProviderList = RouterOutputs['admin']['getProviders'];
+type SingleProvider = ProviderList[number];
+
+// ❌ FORBIDDEN - Never export types from hooks
+export function useAdminProvider(id: string) {
+  return api.admin.getProviderById.useQuery({ id });
+}
+```
+
+---
+
+## 4. Feature Architecture
+
+### Feature Directory Structure
+```
+src/features/
+├── admin/          # Admin dashboard, approval workflows
+├── auth/           # Login, registration, email verification
+├── billing/        # Subscriptions, payments, usage tracking
+├── calendar/       # Availability, bookings, slots, Google Calendar sync
+├── communications/ # Email/SMS/WhatsApp templates
+├── invitations/    # Organization member invitations
+├── organizations/  # Org management, locations, provider networks
+├── profile/        # User profile management
+├── providers/      # Provider onboarding, services, requirements
+├── reviews/        # Review system (future)
+└── settings/       # User preferences
+```
+
+### Feature Pattern (Example: `features/calendar/`)
+```
+calendar/
+├── components/
+│   ├── availability/           # Availability CRUD forms
+│   ├── error-boundary/         # Error handling
+│   ├── loading/                # Skeleton states
+│   ├── provider-calendar-slot-view.tsx
+│   ├── user-bookings-page.tsx
+│   └── ...
+├── hooks/
+│   └── (NO HOOKS - tRPC queries used directly in components)
+├── lib/
+│   ├── actions.ts              # Server actions (business logic)
+│   ├── slot-generation.ts      # Slot calculation algorithms
+│   ├── recurrence-utils.ts     # Recurring availability
+│   ├── scheduling-rules.ts     # ON_THE_HOUR, etc.
+│   └── ...
+└── types/
+    ├── types.ts                # Domain types (RecurrencePattern, etc.)
+    ├── schemas.ts              # Zod schemas for tRPC input
+    └── guards.ts               # Runtime type guards
+```
+
+### Key Features by Size
+1. **Calendar** (2555 LOC router) - Core booking flow, availability management, slot generation
+2. **Providers** (3132 LOC router) - Onboarding, service configuration, requirement validation
+3. **Organizations** (1714 LOC router) - Multi-location management, provider networks, invitations
+4. **Admin** (1084 LOC router) - Approval workflows, analytics, system management
+
+---
+
+## 5. Critical Utilities
+
+### Timezone (`src/lib/timezone.ts`)
+```typescript
+// ⚠️ CRITICAL: All dates stored in UTC, displayed in SAST (UTC+2)
+// ❌ NEVER: new Date(), Date.now()
+// ✅ ALWAYS: import from @/lib/timezone
+
+nowUTC(): Date                    // Current time in UTC
+nowSAST(): Date                   // Current time in SAST (for display)
+toUTC(localDate: Date): Date      // Convert SAST → UTC (for storage)
+fromUTC(utcDate: Date): Date      // Convert UTC → SAST (for display)
+startOfDaySAST(date: Date): Date  // Get start of day in SAST, return UTC
+endOfDaySAST(date: Date): Date    // Get end of day in SAST, return UTC
+formatSAST(date: Date): string    // Format for display in en-ZA locale
+addMilliseconds(date, ms): Date   // Token expiry, timeouts
+parseUTC(isoString: string): Date // Parse ISO strings ensuring UTC
+```
+
+### Logger & PHI Protection (`src/lib/logger.ts`)
+```typescript
+// ⚠️ NO console.log/error/warn in production code (ESLint error)
+// ✅ ALWAYS: Use logger with PHI sanitization
+
+logger.debug('feature', 'message', context)  // Controlled by DEBUG_FEATURE=true
+logger.info('message', context)              // Dev only
+logger.warn('message', context)              // Always logged
+logger.error('message', error, context)      // Always logged
+logger.audit('message', context)             // POPIA compliance - always logged
+
+// PHI Sanitization (REQUIRED before logging)
+sanitizeEmail('john@example.com')   // → 'jo***@example.com'
+sanitizePhone('+27821234567')       // → '+2782***4567'
+sanitizeName('John Doe')            // → 'Jo** Do*'
+sanitizeUserId(id)                  // → '[USER:cuid...]'
+sanitizeContext(object)             // Auto-sanitizes known PHI fields
+```
+
+### Authentication (`src/lib/auth.ts`)
+```typescript
+// NextAuth configuration with:
+// - Google OAuth (automatic email verification)
+// - Credentials (email/password with bcrypt)
+// - Session: JWT strategy, 30min timeout (POPIA requirement)
+// - Auto-promotion: ADMIN_EMAILS env var → ADMIN role
+
+getCurrentUser(): Promise<User | null>
+checkRole(allowedRoles: UserRole[]): Promise<User>
+
+// Password Migration: SHA-256 → bcrypt
+// - Auto-migrates on successful login (90-day grace period)
+// - After deadline: forces password reset
+```
+
+### Middleware (`src/middleware.ts`)
+```typescript
+// Route protection with:
+// - Session timeout enforcement (30min inactivity - POPIA)
+// - Email verification checks (VERIFIED_USER requirement)
+// - Organization membership validation (database queries)
+// - Audit logging for authorization failures
+
+// Protected routes:
+// - /admin/* → ADMIN | SUPER_ADMIN
+// - /organizations/* → VERIFIED_USER + active membership
+// - /providers/*, /calendar/*, /availability/*, /bookings/* → VERIFIED_USER
+// - /profile, /dashboard, /settings → Any authenticated user
+```
+
+### Rate Limiting (`src/lib/rate-limit.ts`)
+```typescript
+// ⚠️ CRITICAL: Requires Upstash Redis in production
+// Distributed rate limiting across Vercel serverless instances
+
+apiRateLimit: 100 requests per 60 seconds      // General API protection
+authRateLimit: 5 requests per 15 minutes       // Brute force prevention (login, etc.)
+```
+
+---
+
+## 6. Compliance & Security
+
+### Pre-Commit Hook (`.husky/pre-commit`)
+```bash
+# Enforcement order:
+1. Architecture impact check (warnings only)
+2. CLAUDE.md auto-sync (if modified)
+3. File-by-file CLAUDE.md compliance validation
+4. ESLint (max-warnings=150, errors block)
+5. TypeScript type check (npx tsc --noEmit)
+6. Personal workflow file prevention
+
+# Bypass: git commit --no-verify (use with caution)
+```
+
+### ESLint Rules (`.eslintrc.js`)
+```javascript
+// Security & PHI Protection
+'no-console': 'error'  // Prevent PHI leakage (except logger.ts, tests, scripts)
+
+// Type Safety
+'@typescript-eslint/no-explicit-any': 'warn'  // 245+ violations, migrating to 'error'
+'@typescript-eslint/no-unsafe-assignment': 'warn'
+
+// CLAUDE.md Compliance (Custom Rules)
+'rulesdir/no-new-date': 'error'  // Enforce timezone utilities
+'rulesdir/no-type-barrel-exports': 'error'
+'rulesdir/enforce-direct-type-imports': 'error'
+'rulesdir/enforce-type-file-structure': 'warn'
+'rulesdir/enforce-type-file-naming': 'warn'
+'rulesdir/enforce-prisma-derived-patterns': 'warn'
+
+// Exceptions (with documented reasons):
+// - Type guards: allow (value as any) for runtime validation
+// - tRPC routers: complex Prisma includes create unavoidable any types
+// - Form components: react-hook-form generic types
+// - Google Maps: external library with complex types
+```
+
+### Compliance Validators (`scripts/commit-gate/`)
+```javascript
+compliance-validator.js    // 13 rules (timezone, type safety, PHI, architecture, etc.)
+transaction-validator.js   // Validates prisma.$transaction() for multi-table ops
+phi-validator.js          // Ensures logger.* calls use sanitization
+```
+
+### POPIA Compliance
+- **Session Timeout**: 30 minutes (enforced in middleware)
+- **Audit Trail**: All PHI access logged via `logger.audit()`
+- **Consent Tracking**: User.emailVerified, User.phoneVerified
+- **Data Minimization**: PHI sanitization before logging
+- **Access Control**: Role-based + email verification requirements
+
+### Recent Security Work (Last 5 Commits)
+```
+ee7b0ea - Transaction safety: 20 additional suppressions (documented)
+31d212f - Fix: resendProviderInvitation race condition (admin suppressions)
+d205889 - Transaction safety: auth, admin, profile routers
+bc5cdb5 - Transaction safety: organization operations
+390d491 - Transaction safety: provider requirement workflows
+```
+
+---
+
+## 7. UI Architecture
+
+### Component Library (`src/components/`)
+```
+components/
+├── ui/                  # shadcn/ui components (Radix UI + Tailwind)
+│   ├── button.tsx
+│   ├── dialog.tsx
+│   ├── form.tsx
+│   ├── calendar.tsx
+│   ├── location-autocomplete.tsx  # Google Maps integration
+│   └── ... (30+ components)
+├── auth/                # Shared auth components
+├── layout/              # Navigation, sidebars
+├── providers/           # React Query + tRPC provider wrapper
+└── skeletons/           # Loading states
+```
+
+### App Routes (`src/app/`)
+```
+app/
+├── (general)/           # Public routes
+│   ├── page.tsx         # Landing page
+│   ├── login/
+│   ├── providers/       # Public provider search
+│   ├── verify-email/
+│   └── ...
+└── (dashboard)/         # Protected routes (middleware-enforced)
+    ├── admin/
+    ├── organizations/
+    ├── providers/
+    ├── calendar/
+    └── ...
+```
+
+### Client vs Server Components
+- **Default**: Server Components (Next.js 14 App Router)
+- **Client**: Marked with `'use client'` - forms, interactivity, tRPC hooks
+- **Data Fetching**: tRPC hooks (`api.router.procedure.useQuery()`)
+- **Form Handling**: react-hook-form + zodResolver
+
+---
+
+## 8. Data Flow Patterns
+
+### Booking Flow (Critical Path)
+```typescript
+1. User selects slot → client validates availability
+2. createBooking mutation (calendar router)
+   ├─ Transaction start
+   ├─ Lock slot (findUnique + status check)
+   ├─ Validate no double-booking (CRITICAL)
+   ├─ Create booking
+   ├─ Update slot status → BOOKED
+   ├─ Generate Google Meet link (if online)
+   ├─ Transaction commit
+   └─ Revalidate cache
+3. Send notifications (email/SMS/WhatsApp)
+4. Audit log booking creation (POPIA)
+```
+
+### Availability Creation → Slot Generation
+```typescript
+1. Provider creates availability (calendarRouter.createAvailability)
+2. validateAvailabilityCreation() - business rules
+3. generateRecurringInstances() - if recurring
+4. generateSlotDataForAvailability()
+   ├─ Apply schedulingRule (CONTINUOUS, ON_THE_HOUR, etc.)
+   ├─ Split by service durations
+   ├─ Check calendar event conflicts (CalendarIntegration)
+   └─ Generate CalculatedAvailabilitySlot[] records
+5. Transaction: Insert availability + all slots atomically
 ```
 
 ### Type Safety Chain
 ```
-Prisma Schema → Generated Types → Zod Schemas → tRPC Types → Component Props
-```
-- Extract types via `RouterOutputs['router']['procedure']`
-- NO direct Prisma imports in client code
-- NO type exports from hooks (return tRPC queries directly)
-
----
-
-## 🗄️ Database Schema (30+ Models)
-
-### Users & Authentication
-- `User` - Multi-role users (USER, ADMIN, SUPER_ADMIN)
-- `Account` - OAuth provider accounts
-- `LoginAttempt` - Security tracking
-- `EmailVerificationToken` - Email verification flow
-
-### Providers (Healthcare Professionals)
-- `Provider` - Provider profiles with approval workflow
-- `ProviderType` - Medical specializations (Psychologist, GP, etc.)
-- `ProviderTypeAssignment` - Many-to-many provider types
-- `RequirementType` + `RequirementSubmission` - Regulatory documents
-
-### Organizations (Medical Practices/Clinics)
-- `Organization` - Multi-location practices
-- `Location` - Physical locations (Google Places integrated)
-- `OrganizationMembership` - Staff roles (OWNER, ADMIN, MANAGER, STAFF)
-- `OrganizationInvitation` - Member invitation system
-- `OrganizationMembershipHistory` - Audit trail
-- `OrganizationProviderConnection` - Provider-org relationships
-- `ProviderInvitation` - Provider recruitment
-
-### Calendar & Availability
-- `Availability` - Time blocks for appointments
-- `CalculatedAvailabilitySlot` - Computed bookable slots
-- `Booking` - Appointments (registered users, guests, staff-created)
-- `Service` - Service catalog
-- `ServiceAvailabilityConfig` - Service-specific availability
-
-### Calendar Integration (Google)
-- `CalendarIntegration` - Sync configuration
-- `CalendarEvent` - External events (blocks slots)
-- `CalendarSyncOperation` - Sync tracking
-- `MeetSession` - Google Meet links
-
-### Billing & Subscriptions
-- `Subscription` - Slot-based billing (not per-booking)
-- `SubscriptionPlan` - Tiered pricing
-- `Payment` - Payment records (Stripe-ready)
-- `UsageRecord` - Slot usage tracking
-
-### Communications & Reviews
-- `CommunicationLog` - Email/SMS/WhatsApp tracking
-- `CommunicationPreference` - User notification settings
-- `Review` - Provider reviews (Google Reviews ready)
-
-### Compliance (POPIA)
-- `AuditLog` - Required audit trail
-- PHI access logging throughout codebase
-
-### Key Business Rules (Enforced)
-1. **Exclusive Scheduling**: Only ONE entity (provider OR organization) per time period
-2. **Slot-Based Billing**: Bill per availability slot created, not per booking
-3. **Approval Workflows**: Providers and organizations require admin approval
-4. **Email Verification**: Required for creating availability/bookings
-5. **Trial System**: 14-day trials with conversion tracking
-
----
-
-## 📡 API Architecture (tRPC)
-
-### Routers (`/src/server/api/routers/`)
-
-**Active Routers (9)** - 112 procedures total:
-
-1. **admin.ts** (17 procedures) - Admin operations
-   - User management, provider approval, organization approval
-   - Analytics, audit logs
-
-2. **auth.ts** (1 procedure) - Authentication
-   - Basic auth operations (minimal router)
-
-3. **calendar.ts** (23 procedures) - Calendar & bookings
-   - Availability CRUD, booking management
-   - Google Calendar sync, slot generation
-
-4. **communications.ts** (0 procedures) - Service layer only
-   - Empty router (uses server actions in /features/communications/lib/actions.ts)
-   - No tRPC endpoints (designed as utility service)
-
-5. **debug.ts** (1 procedure) - Development utilities
-   - Debug/testing operations
-
-6. **organizations.ts** (23 procedures) - Organization management
-   - Organization CRUD, member management
-   - Location management, provider network
-
-7. **profile.ts** (3 procedures) - User profile
-   - Profile viewing and editing
-
-8. **providers.ts** (38 procedures) - Provider management (LARGEST)
-   - Provider CRUD, requirements submission
-   - Service management, integrations
-
-9. **settings.ts** (6 procedures) - User settings
-   - Settings and preferences
-
-**Inactive Router (1)** - 5 procedures:
-
-10. **billing.ts** (5 procedures) - Subscriptions
-    - EXISTS but commented out in root.ts (line 21)
-    - `getSubscription`, `createSubscription`, `cancelSubscription`
-    - `getUsageRecords`, `getPayments`
-
-### Procedures Available
-- `publicProcedure` - No auth required
-- `protectedProcedure` - Requires authentication
-- `adminProcedure` - Requires ADMIN or SUPER_ADMIN
-- `superAdminProcedure` - Requires SUPER_ADMIN only
-
----
-
-## 🎨 Feature Modules (`/src/features/`)
-
-All follow strict pattern: `components/`, `hooks/`, `lib/`, `types/`
-
-1. **admin** (206 files) - Admin dashboard, approvals, analytics
-   - Components: Dashboard, provider/organization lists and details, approval workflows
-   - Hooks: Admin providers, organizations, approvals, suspensions
-   - Types: Admin-specific schemas and guards
-
-2. **auth** - Login, registration, email verification
-   - Components: Auth buttons
-   - Lib: Session helpers
-
-3. **billing** - Subscription management, payment processing
-   - Components: Pricing calculator
-   - Lib: Billing actions, queries, helpers
-   - Types: Billing schemas and guards
-
-4. **calendar** - Availability creation, booking management, views
-   - Components: Availability forms, booking modals, calendar views (day/week/month/3-day)
-   - Hooks: Availability, bookings, slots, organizations, services
-   - Lib: Calendar utils, recurrence, scheduling rules, slot generation
-
-5. **communications** - Email/SMS/WhatsApp templates and sending
-   - Components: VCard sender
-   - Lib: Email/WhatsApp templates, communication helpers
-
-6. **invitations** - Organization and provider invitation flows
-   - Components: Invitation flows (existing/new users), error states
-   - Types: Invitation schemas and guards
-
-7. **organizations** - Org registration, member/location management
-   - Components: Registration wizard, profile editing, provider network management
-   - Hooks: Organizations, locations, connections, invitations
-   - Lib: Organization actions and helpers
-
-8. **profile** - User profile editing
-   - Components: Profile forms, delete account
-   - Hooks: Profile management
-
-9. **providers** - Provider onboarding, verification, services
-   - Components: Onboarding wizard, profile management, requirements, integrations
-   - Hooks: Provider CRUD, requirements, services, connections
-   - Lib: Provider actions
-
-10. **reviews** - Review submission and display
-    - Lib: Review actions, queries, helpers
-    - Types: Review schemas
-
-11. **settings** - User preferences, communication settings
-    - Components: Settings sections (account, communication, provider business)
-    - Hooks: Settings management
-    - Types: Settings schemas
-
----
-
-## 🧩 UI Components (`/src/components/ui/`)
-
-**47 shadcn/ui Components**:
-- **Forms**: form, input, label, checkbox, radio-group, select, slider, switch, textarea
-- **Data**: card, table, avatar, badge, separator, scroll-area
-- **Overlays**: dialog, alert-dialog, popover, dropdown-menu, context-menu, tooltip
-- **Navigation**: navigation-menu, breadcrumb, tabs, collapsible
-- **Feedback**: toast, alert, progress
-- **Date/Time**: calendar, date-picker, date-time-picker, date-range-selector
-- **Custom**: location-autocomplete, phone-input
-
-**Shared Components** (`/src/components/`):
-- `providers.tsx` - Root wrapper (QueryClient, SessionProvider, ThemeProvider)
-- Navigation components
-- Layout components
-
----
-
-## 🔐 Authentication & Authorization
-
-### Auth Implementation (`/src/lib/auth.ts`)
-- **Providers**: Google OAuth (primary), Credentials (SHA-256, needs bcrypt)
-- **Session**: JWT-based
-- **Auto-Admin**: Via `ADMIN_EMAILS` env var
-- **Email Verification**:
-  - Google OAuth: Auto-verified
-  - Credentials: Token-based (24hr expiry)
-
-### Middleware (`/src/middleware.ts`)
-**Role-Based Access Control**:
-- `ADMIN`/`SUPER_ADMIN`: Organizations, admin dashboard
-- `VERIFIED_USER`: Calendar, availability, bookings, provider features
-- `USER`: Profile, settings, dashboard
-
-**Route Protection**: 11 matcher patterns
-- Redirects unverified users to `/verify-email`
-- Redirects unauthorized users to `/unauthorized`
-
----
-
-## 🛠️ Critical Utilities (`/src/lib/`)
-
-### 1. `timezone.ts` - POPIA-Compliant Timezone Handling
-**CRITICAL RULES**:
-- ALL dates stored in UTC (PostgreSQL timestamptz)
-- South Africa: UTC+2 (no DST)
-- `new Date()` and `Date.now()` are **BANNED** (ESLint enforced)
-
-**Functions**:
-```typescript
-nowUTC()                    // Current time in UTC
-nowSAST()                   // Current time in SAST
-toUTC(localDate)            // Convert SAST → UTC
-fromUTC(utcDate)            // Convert UTC → SAST
-startOfDaySAST(date)        // Start of day (UTC)
-endOfDaySAST(date)          // End of day (UTC)
-formatSAST(date, options)   // Format for display
-parseUTC(isoString)         // Parse ISO string to UTC
-addMilliseconds(date, ms)   // Add time to date
-```
-
-### 2. `logger.ts` - PHI-Safe Structured Logging
-**NO console.log allowed** (ESLint enforced)
-
-**Levels**:
-```typescript
-logger.debug(feature, msg, context)  // Dev only (feature flags)
-logger.info(msg, context)            // Dev only
-logger.warn(msg, context)            // Always logged
-logger.error(msg, error, context)    // Always logged
-logger.audit(msg, context)           // Always logged (compliance)
-```
-
-**PHI Sanitization**:
-```typescript
-sanitizeEmail(email)         // "jo***@example.com"
-sanitizePhone(phone)         // "+2782***4567"
-sanitizeName(name)           // "Jo** Do*"
-sanitizeToken(token)         // "abc123def4..."
-sanitizeUserId(id)           // "[USER:id]"
-sanitizeContext(obj)         // Auto-sanitize object
-```
-
-**Feature Flags** (env vars):
-- `DEBUG_ALL=true` - Enable all debug logs
-- `DEBUG_FORMS=true`, `DEBUG_MAPS=true`, `DEBUG_ADMIN=true`, etc.
-
-### 3. `audit.ts` - POPIA Compliance Audit Trail
-```typescript
-createAuditLog({
-  action: string,
-  category: AuditCategory,
-  userId?, userEmail?,
-  resource?, resourceId?,
-  ipAddress?, userAgent?,
-  metadata?
-})
-
-queryAuditLogs({ filters })
-getAuditStats({ startDate, endDate })
-cleanupOldAuditLogs(retentionDays)
-```
-
-**Categories**: AUTHENTICATION, AUTHORIZATION, PHI_ACCESS, ADMIN_ACTION, DATA_MODIFICATION, SECURITY, GENERAL
-
-### 4. `rate-limit.ts` - Upstash Redis Rate Limiting
-**REQUIRED for production** - Blocks without Redis
-
----
-
-## 📋 Compliance System
-
-### CLAUDE.md (30KB, 835 lines - Master Rules)
-**16 Sections**: Critical Rules, Code Analysis, Architecture, Business Rules, Build Gates, Verification, Healthcare Compliance, Security, Performance, Bug Detection, File Hierarchy, Workflow, Tools, Debugging, Deployment, Final Verification
-
-**Key Features**:
-- Cache-First Analysis Protocol (Section 2) - Reduces token usage by 79%
-- Code Generation Compliance Checklist (Section 0)
-- Comprehensive verification protocols
-
-### Compliance Docs (`/docs/compliance/`)
-1. `COMPLIANCE-SYSTEM.md` - Three-layer architecture (IDE, Commit Gate, Sync)
-2. `TIMEZONE-GUIDELINES.md` - Complete timezone implementation guide
-3. `LOGGING.md` - PHI protection standards
-4. `TYPE-SAFETY.md` - Type guards, Prisma JSON handling
-5. `CONTEXT-LOADING.md` - Task-specific context patterns
-6. `VERIFICATION-PROTOCOLS.md` - Route & data validation
-7. `DEVELOPMENT-WORKFLOW.md` - Task execution flow
-8. `VERCEL-DEPLOYMENT.md` - Production deployment guide
-9. `BUG-DETECTION.md` - Common bug patterns
-10. `CLAUDE-MD-AUTO-SYNC.md` - Auto-sync system
-
-### Pre-commit Validation (`.husky/pre-commit`)
-Validates:
-- ✅ Timezone compliance (no `new Date()` or `Date.now()`)
-- ✅ Type safety (`as any` restrictions)
-- ✅ PHI sanitization in logging
-- ✅ Cross-feature imports (forbidden)
-- ✅ Hook type exports (forbidden)
-- ✅ Zod validation in tRPC
-- ✅ Transaction requirements for bookings
-- ✅ Pagination (`take:`) for findMany
-
-### Custom ESLint Rules (`/eslint-rules/`)
-1. `no-new-date.js` - Blocks `new Date()` and `Date.now()`
-2. `no-type-barrel-exports.js` - Enforces direct type imports
-3. `enforce-type-file-structure.js` - Type file organization
-4. `enforce-direct-type-imports.js` - No barrel exports
-5. `enforce-type-file-naming.js` - types.ts, schemas.ts, guards.ts
-6. `enforce-prisma-derived-patterns.js` - Correct Prisma type extraction
-7. `type-organization.js` - Type organization patterns
-8. `index.js` - Rule loader and exports
-
----
-
-## ⚠️ Known Technical Debt
-
-1. **Type Safety**: Minimal ESLint warnings
-   - Only 2 `@typescript-eslint/no-explicit-any` in `/src/app/api/trpc/[trpc]/route.ts`
-   - 18 TODO/FIXME/HACK comments across 8 files:
-     - billing/lib/actions.ts (3)
-     - organizations/lib/actions.ts (7)
-     - organizations router (1)
-     - forms and calendar components (7)
-   - **Significantly improved** from previous 245+ warnings
-
-2. **Password Hashing**: Currently SHA-256 (`/src/lib/auth.ts:16-19`)
-   - Simple crypto.createHash('sha256') implementation
-   - TODO: Migrate to bcrypt for production
-   - Comment acknowledges this: "will add bcryptjs as dependency"
-
-3. **Billing Router**: Exists but INACTIVE (`/src/server/api/routers/billing.ts`)
-   - 5 procedures defined
-   - Not imported in `/src/server/api/root.ts:21` (commented out)
-   - Ready for activation when billing features needed
-
-4. **Placeholder Metadata**: `/src/app/layout.tsx:8-11`
-   - Default Next.js title: "Create Next App"
-   - Default description: "Generated by create next app"
-   - TODO: Update with MedBookings branding
-
-5. **Session Timeout**: Not implemented yet
-   - POPIA requires 30-minute timeout
-   - Mentioned in CLAUDE.md Section 7 but not enforced
-   - No automatic session expiration logic
-
----
-
-## 🎯 Architectural Patterns
-
-### ❌ FORBIDDEN Patterns
-
-```typescript
-// Cross-feature imports
-import { something } from '@/features/otherFeature';
-
-// Prisma in client
-import { prisma } from '@/lib/prisma';
-
-// Type exports from hooks
-export type AdminProvider = RouterOutputs['admin']['getProviders'];
-
-// Direct Date usage
-const now = new Date(); // BLOCKED by ESLint
-
-// Console logging
-console.log('user:', user); // BLOCKED by ESLint
-
-// Any types (warning)
-const handleData = (data: any) => {};
-
-// Unbounded queries
-const all = await prisma.provider.findMany(); // Missing take:
-
-// Multiple queries per endpoint
-const provider = await createProvider(input);
-return prisma.provider.findUnique({ where: { id: provider.id } });
-```
-
-### ✅ REQUIRED Patterns
-
-```typescript
-// tRPC type extraction
-import { type RouterOutputs } from '@/utils/api';
-type Provider = RouterOutputs['providers']['getAll'][number];
-
-// Timezone-safe current time
-import { nowUTC, formatSAST } from '@/lib/timezone';
-const now = nowUTC();
-const display = formatSAST(now);
-
-// PHI-safe logging
-import { logger, sanitizeEmail } from '@/lib/logger';
-logger.info('User logged in', { email: sanitizeEmail(user.email) });
-
-// Audit logging for sensitive actions
-import { createAuditLog } from '@/lib/audit';
-await createAuditLog({
-  action: 'Provider approved',
-  category: 'ADMIN_ACTION',
-  userId: ctx.session.user.id,
-  resourceId: providerId
-});
-
-// Transactions for multi-table operations
-await prisma.$transaction(async (tx) => {
-  const slot = await tx.calculatedAvailabilitySlot.findUnique({ where: { id } });
-  if (slot.status !== 'AVAILABLE') throw new Error('Unavailable');
-  await tx.booking.create({ data: { slotId: id, ...bookingData } });
-  await tx.calculatedAvailabilitySlot.update({ where: { id }, data: { status: 'BOOKED' } });
-}, { maxWait: 10000, timeout: 20000 });
-
-// Pagination for queries
-const providers = await prisma.provider.findMany({
-  take: 50,
-  skip: offset,
-  orderBy: { createdAt: 'desc' }
-});
-
-// tRPC procedure pattern
-export const myRouter = createTRPCRouter({
-  getProcedure: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      // 1. Authorization check
-      // 2. Single database query
-      // 3. Return data
-    })
-});
+Database (Prisma types)
+  ↓
+Zod Schemas (tRPC input/output validation)
+  ↓
+tRPC Procedures (inferred types)
+  ↓
+RouterOutputs (type extraction)
+  ↓
+Component Props (type-safe all the way)
 ```
 
 ---
 
-## 🚀 App Routes (`/src/app/`)
+## 9. Known Issues & TODOs
 
-### Route Groups
-- `(general)/` - Public and basic auth routes
-- `(dashboard)/` - Protected user dashboard
-- `(admin)/` - Admin-only routes
+### High Priority (4 items)
+1. **Organization Logo Upload** - Vercel Blob integration needed (~2h)
+   - Files: `features/organizations/components/*/edit-organization-basic-info.tsx`
+   
+2. **Calendar Import/Export** - iCal format support (~4-6h)
+   - Files: `app/(dashboard)/calendar/availability/page.tsx:173,184`
 
-### Key Pages (39 total)
+3. **Organization Calendar View** - Multi-provider calendar (~3-4h)
+   - Files: `app/(dashboard)/organizations/[id]/manage-calendar/page.tsx:197`
 
-**Route Groups**:
-- `(general)/` - Public and auth routes (12 pages)
-- `(dashboard)/` - Protected user routes (26 pages)
-- `/` - Root routes (1 page: /help)
+4. **Error Monitoring** - Sentry integration (~1-2h)
+   - Files: `app/(general)/(auth)/error/page.tsx:73`
 
-**Critical Routes**:
-```
-/                                           # Home page
-/login                                      # Authentication
-/providers                                  # Public provider search
-/calendar/[id]                              # Public calendar view
-/invitation/[token]                         # Organization invitations
-/verify-email                               # Email verification
-/dashboard                                  # Main dashboard
-/profile                                    # User profile
-/settings                                   # User settings
-/providers/new                              # Provider onboarding
-/provider-profile                           # Provider management
-/organizations/new                          # Create organization
-/organizations/[id]                         # Organization dashboard
-/organizations/[id]/edit/*                  # Edit org (basic-info, locations, billing)
-/organizations/[id]/members                 # Member management
-/organizations/[id]/manage-calendar         # Calendar management
-/availability                               # Availability management
-/availability/create                        # Create availability
-/my-bookings                                # User bookings
-/admin                                      # Admin dashboard
-/admin/providers                            # Provider approval
-/admin/organizations                        # Organization approval
-/terms-of-use                               # Legal
-/privacy-policy                             # Legal
-/unauthorized                               # Access denied
-```
+### Low Priority (13 email notifications)
+- SendGrid templates needed
+- See: `docs/core/TODO-TRACKING.md` for complete list
+
+### Type Safety Status ✅
+- **0 ESLint warnings** (100% compliance achieved Nov 3, 2025)
+- All legitimate 'any' usage covered by documented overrides (.eslintrc.js:166-246)
+- `@typescript-eslint/no-explicit-any` set to 'warn' to prevent future violations
+- Historical migration: 245+ warnings → 0 warnings (Oct-Nov 2025)
 
 ---
 
-## 🧪 Testing (`/e2e/`)
+## 10. Development Workflow
 
-**Framework**: Playwright 1.54.1
-**Strategy**: E2E only (no unit tests currently)
-
-**Test Suites**:
-- `auth/` - Login, registration, verification
-- `booking/` - Booking creation and management
-- `provider/` - Provider onboarding and profile
-- `calendar/` - Availability and calendar operations
-
-**Scripts**:
+### Commands
 ```bash
-npm run test              # Run all tests
-npm run test:headed       # Visual mode
-npm run test:ui           # Playwright UI
-npm run test:debug        # Debug mode
-npm run test:auth         # Auth tests only
-npm run test:ci           # CI/CD pipeline
+# Development
+npm run dev                  # Start dev server (DO NOT RUN via Claude Code)
+npm run build                # Build + type check (ALWAYS run before commit)
+npm run lint                 # ESLint + auto-fix (ALWAYS run before commit)
+
+# Testing
+npm run test                 # Playwright e2e tests (user runs)
+npm run test:auth            # Auth flow tests
+npm run test:booking         # Booking flow tests
+
+# Compliance
+npm run compliance:check     # Check CLAUDE.md sync status
+npm run compliance:sync      # Force sync compliance rules
+npm run compliance:validate  # Validate specific file
+
+# Database
+npx prisma generate          # Generate Prisma client
+npx prisma studio            # DB GUI
+npx prisma db push           # Push schema (dev only)
+```
+
+### File Naming Conventions (ESLint-enforced)
+- Files: `kebab-case.tsx` (e.g., `user-bookings-page.tsx`)
+- Folders: `kebab-case` (e.g., `src/features/calendar/`)
+- Types: `types.ts`, `schemas.ts`, `guards.ts`, `enums.ts` (enforced structure)
+
+### Build Verification (Mandatory)
+```bash
+# ALWAYS run before marking tasks complete:
+npx tsc --noEmit && npm run build && npm run lint
+
+# If any fail: Fix errors systematically, never proceed with failures
 ```
 
 ---
 
-## 🌍 Environment Variables
+## 11. Recent Changes Log
 
-### Required for Development
-```env
-DATABASE_URL                              # PostgreSQL connection string
-NEXTAUTH_URL                              # App URL (http://localhost:3000)
-NEXTAUTH_SECRET                               # NextAuth secret (min 32 chars)
-GOOGLE_CLIENT_ID                          # Google OAuth
-GOOGLE_CLIENT_SECRET                      # Google OAuth
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY          # Google Maps (client-side)
+### 2025-11-05 (Transaction Safety Sprint)
+- **Commits**: ee7b0ea, 31d212f, d205889, bc5cdb5, 390d491
+- **Changes**: 
+  - Added transaction safety for all multi-table operations
+  - Fixed critical race condition in `resendProviderInvitation`
+  - Documented 26 transaction safety suppressions
+  - Auth router: Wrapped email verification in transactions
+  - Provider router: Requirement validation workflows now atomic
+
+### 2025-11-03 (Infrastructure Improvements)
+- **Commit**: 3bd520b
+- Comprehensive infrastructure improvements and compliance fixes
+
+### 2025-11-02 (Documentation & Security)
+- **Commits**: acbddd0, b92237c, da1216e, 2dbd1da
+- Documentation validation warnings resolved
+- Environment variable configuration standardized
+- Redundant .env file removed
+
+### 2025-11-01 (Compliance Audit)
+- **Commits**: db7c296, be6c3a2
+- Security audit completed - all tests passed
+- CLAUDE.md compliance violations resolved
+
+---
+
+## 12. Integration Points
+
+### Google Calendar Integration
+```typescript
+// CalendarIntegration model stores OAuth tokens
+// Sync operations tracked in CalendarSyncOperation
+// External events → CalendarEvent → block CalculatedAvailabilitySlot[]
+
+Sync Types:
+- FULL_SYNC: Complete calendar refresh
+- INCREMENTAL_SYNC: Changes since lastSyncToken
+- WEBHOOK_SYNC: Real-time push notifications
+- MANUAL_SYNC: User-triggered
 ```
 
-### Optional Services
-```env
-BLOB_READ_WRITE_TOKEN                     # Vercel Blob storage
-TWILIO_ACCOUNT_SID                        # SMS/WhatsApp
-TWILIO_AUTH_TOKEN
-TWILIO_PHONE_NUMBER
-TWILIO_WHATSAPP_NUMBER
-SENDGRID_API_KEY                          # Email
-SENDGRID_FROM_EMAIL
-ADMIN_EMAILS                              # Auto-promote to ADMIN role
-ADMIN_NOTIFICATION_EMAIL                  # Admin notifications
+### Google Meet Integration
+```typescript
+// Auto-generation when isOnline = true
+// Stored in Booking.meetLink
+// MeetSession model tracks status: SCHEDULED | STARTED | ENDED | CANCELLED
 ```
 
-### Production Critical
-```env
-UPSTASH_REDIS_REST_URL                    # Rate limiting (REQUIRED)
-UPSTASH_REDIS_REST_TOKEN
+### Email/SMS/WhatsApp
+```typescript
+// SendGrid: Transactional emails (SENDGRID_API_KEY)
+// Twilio: SMS + WhatsApp (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+// Templates: src/features/communications/lib/email-templates.ts
+
+Communication Preferences:
+- User.reminderChannels: string[] @default(["email", "sms"])
+- CommunicationPreference model: per-user channel settings
+```
+
+### File Storage
+```typescript
+// Vercel Blob Storage (@vercel/blob)
+// Currently used for: Provider profile images
+// Planned: Organization logos, requirement documents
+// Utility: src/lib/storage/blob.ts
 ```
 
 ---
 
-## 📦 Key Dependencies
+## 13. Performance Optimizations
 
-### Runtime
-- `@prisma/client` 5.22.0 - Database ORM
-- `@trpc/server`, `@trpc/client`, `@trpc/react-query` 11.4.3 - API layer
-- `@tanstack/react-query` 5.60.6 - State management
-- `next` 14.2.15 - Framework
-- `next-auth` 4.24.10 - Authentication
-- `zod` 3.25.48 - Validation
-- `react-hook-form` 7.57.0 - Forms
-- `date-fns`, `date-fns-tz` - Date manipulation
-- `@radix-ui/*` - UI primitives
-- `tailwindcss` 3.4.1 - Styling
+### Database
+- **Pagination**: ALL `findMany()` MUST include `take:` (min 20)
+- **Indexes**: Strategic indexes on high-traffic queries (see Schema section)
+- **N+1 Prevention**: Eager loading with `include:` and `select:`
+- **Transactions**: Multi-table operations wrapped in `prisma.$transaction()`
 
-### Development
-- `typescript` 5.6.3
-- `eslint` 8.57.1 + custom rules
-- `prettier` 3.3.3
-- `@playwright/test` 1.54.1
-- `prisma` 5.22.0
-- `husky` 9.1.7 - Git hooks
+### Frontend
+- **Code Splitting**: Route-based (Next.js automatic)
+- **Image Optimization**: Next.js Image component (REQUIRED)
+- **Caching**: React Query (via tRPC) - 5min default staleTime
+- **Lazy Loading**: Dynamic imports for heavy components
+
+### API
+- **Rate Limiting**: Upstash Redis (production-required)
+- **Response Caching**: React Query on client
+- **Debouncing**: Search inputs (500ms default)
+- **Optimistic Updates**: Booking creation, availability acceptance
 
 ---
 
-## 🔄 Recent Changes Log
+## 14. Environment Variables
 
-### 2025-10-14 (Full Refresh - Current)
-- **COMPREHENSIVE VERIFICATION**: Full codebase analysis with corrected metrics
-- **MAJOR CORRECTIONS**:
-  - TypeScript files: **FIXED** 26,069 → 409 (previous data was erroneous)
-  - Routes: 36 → 39 (3 new routes added)
-  - Feature modules: 12 → 11 (corrected count)
-  - Timezone usage: 234 → 244 (10 new instances)
-- **API ROUTER BREAKDOWN**: Detailed procedure counts per router
-  - Total: 117 procedures (112 active, 5 inactive in billing)
-  - Largest: providers.ts (38 procedures)
-  - Empty: communications.ts (service layer only, 0 procedures)
-- **TECHNICAL DEBT UPDATE**: Dramatically improved
-  - Type safety warnings: 245+ → 2 (99% reduction)
-  - TODO/FIXME: 18 comments identified and catalogued
-- **CONTEXT HASH**: Updated to `a7f3e9d2c5b8h4k1`
+### Required (Production)
+```bash
+# Database
+DATABASE_URL="postgresql://..."
 
-### 2025-10-10 22:15 SAST (Previous Full Refresh)
-- **COMPREHENSIVE REFRESH**: Complete codebase analysis with detailed metrics
-- **UPDATED STATISTICS**:
-  - Database models: 33 (confirmed via schema.prisma)
-  - Database enums: 36 (confirmed via schema.prisma)
-  - TypeScript files: 26,069 total (INCORRECT - see 2025-10-14 correction)
-  - tRPC procedures: 194 across 7 active routers (INCORRECT - see 2025-10-14)
-  - Feature modules: 12 (INCORRECT - see 2025-10-14)
-- **DETAILED MODULE ANALYSIS**: Enhanced feature module descriptions with component/hook breakdowns
-- **CONFIRMED**: All compliance systems operational
-- **CONTEXT HASH**: `f9b4c6e3d8a5b2f7`
+# Auth
+NEXTAUTH_URL="https://medbookings.co.za"
+NEXTAUTH_SECRET="<32+ char random string>"
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
 
-### 2025-10-10 21:30 SAST (Previous Refresh)
-- **VERIFIED**: Complete codebase analysis performed
-- **UPDATED**: Statistics with actual counts
-- **CONFIRMED**: 10 tRPC routers (billing router exists but not active)
-- **VALIDATED**: Compliance system fully operational
+# Rate Limiting (CRITICAL)
+UPSTASH_REDIS_REST_URL="..."
+UPSTASH_REDIS_REST_TOKEN="..."
 
-### 2025-10-10 (Earlier)
-- **ADDED**: Cache-first analysis protocol to CLAUDE.md Section 2
-- **ENFORCEMENT**: New sessions automatically check for CLAUDE-AGENT-CONTEXT.md before full scan
-- **TOKEN SAVINGS**: Reduces analysis from ~72k tokens to ~15k tokens (79% savings)
-- **USER COMMANDS**: Added automatic recognition for "refresh", "what's changed", etc.
+# Email
+SENDGRID_API_KEY="..."
+SENDGRID_FROM_EMAIL="noreply@medbookings.co.za"
 
-### 2025-10-09 (22:50)
-- **REMOVED**: `/DEVELOPER-ONBOARDING-GUIDE.md` - No longer needed in project root
-- **FIXED**: `/scripts/README.md` - Corrected validation/ directory references to commit-gate/
-- **UPDATED**: Script documentation now 100% accurate with actual structure
-- **VERIFIED**: All file paths and commands validated
+# SMS/WhatsApp
+TWILIO_ACCOUNT_SID="..."
+TWILIO_AUTH_TOKEN="..."
+TWILIO_PHONE_NUMBER="..."
 
-### 2025-10-09 (Earlier)
-- **CREATED**: `/docs/claude-agent-context/CLAUDE-AGENT-CONTEXT.md` - Initial version for token optimization
-- **ANALYSIS**: Full codebase analysis completed (82K tokens)
-- **CONTEXT**: Comprehensive understanding established
+# Storage
+BLOB_READ_WRITE_TOKEN="..."
+
+# Admin
+ADMIN_EMAILS="admin@medbookings.co.za"
+```
+
+### Optional
+```bash
+# Development Debugging
+DEBUG_ALL=true           # Enable all debug logs
+DEBUG_FORMS=true         # Form validation
+DEBUG_CALENDAR=true      # Calendar operations
+DEBUG_BOOKINGS=true      # Booking flow
+```
 
 ---
 
-## 📝 Usage Notes for AI Assistants
+## 15. Key Architectural Decisions
 
-### On "Analyze the codebase" request:
-1. **Read this file first** (~2K tokens)
-2. **Batch-read critical files** via `read_multiple_files`:
-   - `prisma/schema.prisma`
-   - `src/lib/auth.ts`
-   - `src/server/trpc.ts`
-   - `src/server/api/root.ts`
-   - `src/utils/api.ts`
-   - `src/middleware.ts`
-   - `CLAUDE.md`
-3. **Use Grep for verification** (~2K tokens):
-   - `Grep: 'createTRPCRouter'` → Count routers
-   - `Grep: 'enum.*Status'` → Find status enums
-4. **Read additional files on-demand only**
+### Why tRPC?
+- **Type Safety**: End-to-end TypeScript without code generation
+- **DX**: Auto-completion, refactoring safety
+- **Performance**: No REST serialization overhead
+- **Integration**: Native React Query support
 
-**Total: ~15K tokens (vs 82K)**
+### Why Prisma?
+- **Type Generation**: Database schema → TypeScript types
+- **Migrations**: Version-controlled schema changes
+- **Type Safety**: Compile-time query validation
+- **JSON Support**: Flexible fields (tierPricing, recurrencePattern)
 
-### After making changes:
-1. Update relevant sections in this file
-2. Update "Last Updated" timestamp
-3. Add entry to "Recent Changes Log"
-4. Update "Context Hash" (optional)
+### Why Feature Folders?
+- **Isolation**: No cross-feature imports (ESLint enforced)
+- **Cohesion**: Related code grouped together
+- **Scalability**: Easy to extract to microservices if needed
 
-### Periodic refresh:
-- Every ~20 conversations, suggest full re-scan
-- User can request: "refresh the codebase context"
+### Why Timezone Utilities?
+- **Consistency**: Single source of truth for date handling
+- **POPIA**: Accurate timestamps for audit trails
+- **UX**: Correct display in South African timezone (UTC+2)
+- **Safety**: Prevents `new Date()` bugs (ESLint enforced)
 
----
-
-## 🔗 Cross-References
-
-- **Master Rules**: `/CLAUDE.md`
-- **Compliance Guides**: `/docs/compliance/`
-- **Developer Principles**: `/docs/guides/DEVELOPER-PRINCIPLES.md`
-- **Testing Guide**: `/README-E2E-TESTING.md`
-- **Main README**: `/README.md`
+### Why Compliance System?
+- **Automation**: Catches violations before they reach production
+- **Documentation**: CLAUDE.md as enforceable spec
+- **Quality**: 85% automation coverage (see ENFORCEMENT-COVERAGE.md)
+- **POPIA**: Built-in data protection compliance
 
 ---
 
-**END OF CONTEXT DOCUMENT**
+## 16. Quick Reference
+
+### Need to...
+
+**Add a new tRPC endpoint?**
+1. Add procedure to `src/server/api/routers/{feature}.ts`
+2. Use Zod schema for input validation
+3. Wrap multi-table ops in `prisma.$transaction()`
+4. Add to router in `src/server/api/root.ts` if new router
+5. Extract types: `RouterOutputs['router']['procedure']`
+
+**Create a new feature?**
+1. Create `src/features/{feature}/` directory
+2. Add `components/`, `lib/`, `types/` subdirectories
+3. Create tRPC router in `src/server/api/routers/{feature}.ts`
+4. Follow isolation rules (no cross-feature imports)
+
+**Add a database field?**
+1. Update `prisma/schema.prisma`
+2. Run `npx prisma generate` (DO NOT run migrate in dev)
+3. Update related Zod schemas in `features/*/types/schemas.ts`
+4. Update tRPC procedures that query the model
+
+**Handle dates/times?**
+1. ALWAYS import from `@/lib/timezone`
+2. Store in UTC: `nowUTC()`, `parseUTC()`
+3. Display in SAST: `formatSAST()`, `fromUTC()`
+4. Query ranges: `startOfDaySAST()`, `endOfDaySAST()`
+
+**Log something?**
+1. NEVER use `console.log/error/warn`
+2. Use `logger.info/warn/error/audit()`
+3. Sanitize PHI: `sanitizeEmail()`, `sanitizeName()`, etc.
+4. Use feature-specific debug: `logger.debug('feature', ...)`
+
+**Fix type error?**
+1. Check `RouterOutputs` extraction pattern
+2. Verify Prisma schema matches code
+3. Run `npx prisma generate`
+4. Check `.eslintrc.js` overrides for acceptable `any` usage
+
+---
+
+## 17. Contact & Resources
+
+### Documentation
+- **Full Specs**: `/docs/INDEX.md` - Complete documentation index
+- **CLAUDE.md**: `/CLAUDE.md` - Comprehensive development guidelines
+- **Type Safety**: `/docs/compliance/TYPE-SAFETY.md`
+- **Database Ops**: `/docs/core/DATABASE-OPERATIONS.md`
+- **Timezone Guide**: `/docs/compliance/TIMEZONE-GUIDELINES.md`
+- **Logging Guide**: `/docs/compliance/LOGGING.md`
+
+### External Resources
+- Next.js Docs: https://nextjs.org/docs
+- tRPC Docs: https://trpc.io/docs
+- Prisma Docs: https://www.prisma.io/docs
+- Radix UI: https://www.radix-ui.com/primitives/docs/overview/introduction
+- Tailwind CSS: https://tailwindcss.com/docs
+
+---
+
+**Cache Usage Instructions**:
+1. Read this file at start of comprehensive analysis tasks
+2. Only read additional files on-demand as needed
+3. Refresh cache (full scan) if file >2 weeks old or on explicit user request
+4. Update "Recent Changes Log" after major work sessions
+5. Update "Last Updated" timestamp when refreshing
+
+**Token Savings**: ~79% (15k vs 72k tokens for full scan)

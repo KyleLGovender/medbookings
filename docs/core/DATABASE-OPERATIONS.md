@@ -175,6 +175,118 @@ await prisma.$transaction(async (tx) => {
 **From CLAUDE.md**:
 > Use `prisma.$transaction()` for multi-table operations
 
+### Complex Cascading Deletions
+
+When deleting entities with multiple relationships, transaction order is critical. Delete in reverse dependency order to maintain referential integrity.
+
+**Example: Provider Deletion with Cascading Cleanup**
+
+```typescript
+// CORRECT: Provider deletion with proper cascade order
+// Location: src/server/api/routers/providers.ts:924-989
+await ctx.prisma.$transaction(async (tx) => {
+  // 1. Delete requirement submissions (leaf nodes)
+  if (provider.requirementSubmissions.length > 0) {
+    await tx.requirementSubmission.deleteMany({
+      where: { providerId: input.id },
+    });
+  }
+
+  // 2. Find all slots BEFORE deleting them (needed for booking cleanup)
+  // ⚠️ CRITICAL: Find first, then delete - not the other way around!
+  const configIds = provider.availabilityConfigs.map((c) => c.id);
+  let slotIds: string[] = [];
+  if (configIds.length > 0) {
+    const slots = await tx.calculatedAvailabilitySlot.findMany({
+      where: { serviceConfigId: { in: configIds } },
+      select: { id: true },
+    });
+    slotIds = slots.map((slot) => slot.id);
+  }
+
+  // 3. Delete bookings BEFORE deleting slots (maintains FK integrity)
+  if (slotIds.length > 0) {
+    await tx.booking.deleteMany({
+      where: { slotId: { in: slotIds } },
+    });
+  }
+
+  // 4. Delete calculated availability slots (batched with IN clause)
+  if (configIds.length > 0) {
+    await tx.calculatedAvailabilitySlot.deleteMany({
+      where: { serviceConfigId: { in: configIds } },
+    });
+  }
+
+  // 5. Delete availability configs
+  if (provider.availabilityConfigs.length > 0) {
+    await tx.serviceAvailabilityConfig.deleteMany({
+      where: { providerId: input.id },
+    });
+  }
+
+  // 6. Delete availability records
+  await tx.availability.deleteMany({
+    where: { providerId: input.id },
+  });
+
+  // 7. Disconnect services (many-to-many cleanup)
+  if (provider.services.length > 0) {
+    await tx.provider.update({
+      where: { id: input.id },
+      data: { services: { set: [] } },
+    });
+  }
+
+  // 8. Finally delete the provider (root entity)
+  await tx.provider.delete({
+    where: { id: input.id },
+  });
+});
+```
+
+**Key Principles**:
+
+1. **Dependency Order**: Delete in reverse dependency order (leafs → root)
+   - Bookings depend on slots → delete bookings first
+   - Slots depend on configs → delete slots second
+   - Configs depend on provider → delete configs third
+   - Provider is root → delete last
+
+2. **Find Before Delete**: When deletion order matters, fetch IDs before deleting
+   ```typescript
+   // ❌ WRONG: Find after delete (finds nothing!)
+   await tx.slot.deleteMany({ where: { configId } });
+   const slots = await tx.slot.findMany({ where: { configId } }); // Returns []
+
+   // ✅ CORRECT: Find before delete
+   const slots = await tx.slot.findMany({ where: { configId } });
+   await tx.booking.deleteMany({ where: { slotId: { in: slotIds } } });
+   await tx.slot.deleteMany({ where: { configId } });
+   ```
+
+3. **Batch Operations**: Use `IN` clauses instead of loops
+   ```typescript
+   // ❌ SLOW: Loop with sequential queries (50 queries)
+   for (const config of configs) {
+     await tx.slot.deleteMany({ where: { serviceConfigId: config.id } });
+   }
+
+   // ✅ FAST: Single batched query (1 query)
+   const configIds = configs.map(c => c.id);
+   await tx.slot.deleteMany({ where: { serviceConfigId: { in: configIds } } });
+   ```
+
+4. **Transaction Isolation**: All operations must be inside the transaction for atomicity
+   - If any operation fails, entire deletion rolls back
+   - Prevents partial deletions that corrupt data
+
+**Debugging Cascading Deletions**:
+- Check foreign key constraints in `schema.prisma`
+- Verify `onDelete` behavior (CASCADE, SET NULL, RESTRICT)
+- Use transaction logs to see exact query order
+- Test with data that has deep dependency trees
+
 ---
 
 ## Performance Optimization

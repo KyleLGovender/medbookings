@@ -334,9 +334,96 @@
 
   Architectural Integrity Rules
 
-  FORBIDDEN Patterns:
-  // ❌ Cross-feature imports
-  import { something } from '@/features/otherFeature'
+  ## Cross-Feature Import Guidelines
+
+  ### ❌ FORBIDDEN (Violations)
+
+  **Feature-Specific Hooks**:
+  ```typescript
+  // ❌ Admin importing provider self-service hook
+  import { useDeleteProvider } from '@/features/providers/hooks/use-provider-delete';
+  ```
+  *Why forbidden*: Hooks designed for different contexts have wrong query invalidations
+
+  **Business Logic**:
+  ```typescript
+  // ❌ Feature importing business logic from another feature
+  import { createAvailability } from '@/features/calendar/lib/create-availability';
+  ```
+  *Why forbidden*: Creates tight coupling between features
+
+  **Circular Dependencies**:
+  ```typescript
+  // ❌ Feature A importing from Feature B, Feature B importing from Feature A
+  ```
+  *Why forbidden*: Creates unmaintainable dependency cycles
+
+  ---
+
+  ### ✅ ACCEPTABLE (Legitimate Composition)
+
+  **Direct tRPC Calls**:
+  ```typescript
+  // ✅ Call tRPC procedure directly (no hook import needed)
+  const { data: organizations } = api.organizations.getByUserId.useQuery(
+    { userId: profile?.id || '' },
+    { enabled: !!profile?.id }
+  );
+  ```
+  *Why acceptable*: tRPC is the API layer, designed for cross-feature communication
+
+  **Dashboard/Orchestration Pages**:
+  ```typescript
+  // ✅ Profile page (dashboard) importing self-contained UI component
+  import { PostRegistrationInvitationHandler } from '@/features/invitations/components/post-registration-invitation-handler';
+  ```
+  *Why acceptable*: Dashboard pages aggregate multiple features; component is fully encapsulated
+
+  **UI Components with Data Ownership**:
+  ```typescript
+  // ✅ Provider importing calendar UI when provider owns the data
+  import { AvailabilityProposalsList } from '@/features/calendar/components/availability/availability-proposals-list';
+  ```
+  *Why acceptable*: Provider owns availability data (FK: Availability.providerId); calendar is presentation layer
+
+  **Shared Code**:
+  ```typescript
+  // ✅ All features can import from shared locations
+  import { useToast } from '@/hooks/use-toast';
+  import { Button } from '@/components/ui/button';
+  import { nowUTC } from '@/lib/timezone';
+  import { api } from '@/utils/api';
+  ```
+  *Why acceptable*: These are explicitly shared utilities, not feature-specific code
+
+  ---
+
+  ### Decision Tree: Is This Import Acceptable?
+
+  ```
+  Is the import from...
+  ├─ /src/hooks/, /src/components/, /src/lib/, /src/utils/ ?
+  │  └─ ✅ YES - These are shared, always acceptable
+  │
+  ├─ Another feature's /components/ ?
+  │  ├─ Is the component self-contained (manages own data fetching)?
+  │  │  └─ ✅ YES - Acceptable UI composition
+  │  └─ Does it require prop drilling of feature-specific data?
+  │     └─ ❌ NO - Creates tight coupling
+  │
+  ├─ Another feature's /hooks/ ?
+  │  ├─ Could you call api.feature.procedure.useQuery() directly instead?
+  │  │  └─ ✅ YES - Use direct tRPC call, don't import hook
+  │  └─ Is the hook truly feature-agnostic?
+  │     └─ Move to /src/hooks/ instead
+  │
+  └─ Another feature's /lib/ (business logic)?
+     └─ ❌ ALWAYS FORBIDDEN - Move shared logic to /src/lib/
+  ```
+
+  ---
+
+  ## Other FORBIDDEN Patterns
 
   // ❌ Import Prisma in client
   import { prisma } from '@/lib/prisma'
@@ -357,12 +444,19 @@
   const result = await createProvider(input);
   return ctx.prisma.provider.findUnique({ id: result.id });
 
-  REQUIRED Patterns:
+  ## REQUIRED Patterns
+
   - NO Redux/Zustand/Context in features
   - State MUST live in tRPC/React Query
   - Feature components stay in feature folders
   - No business logic in /src/lib/* or shared components
   - Database access ONLY through tRPC procedures
+
+  📄 **Complex Transaction Patterns**: See `/docs/core/DATABASE-OPERATIONS.md` (Complex Cascading Deletions section) for:
+  - Provider deletion transaction sequence
+  - Dependency order principles
+  - Find-before-delete patterns
+  - Batch operation examples
 
   📋 SECTION 4: BUSINESS RULES
 
@@ -640,12 +734,6 @@
   🔄 SECTION 12: DEVELOPMENT WORKFLOW
 
   📄 **Complete Workflow Guide**: See `/docs/compliance/DEVELOPMENT-WORKFLOW.md` for detailed task execution flow, development standards, and command execution policy.
-
-  📄 **TODO Tracking**: See `/docs/core/TODO-TRACKING.md` for:
-  - Current TODO/FIXME items organized by priority
-  - High priority tasks (4 items): logo upload, calendar import/export, org calendar view, error monitoring
-  - Low priority tasks (13 items): email notifications across features
-  - Implementation notes with file locations
 
   Task Execution Flow
 
