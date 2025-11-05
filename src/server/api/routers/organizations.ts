@@ -3,8 +3,20 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import {
+  type InvitationCancelledData,
+  type InvitationRejectedData,
+  type MemberRemovedData,
   type OrganizationInvitationData,
+  type OrganizationRegisteredData,
+  type RoleChangedData,
+  type WelcomeMemberData,
+  getInvitationCancelledTemplate,
+  getInvitationRejectedTemplate,
+  getMemberRemovedTemplate,
   getOrganizationInvitationTemplate,
+  getOrganizationRegisteredTemplate,
+  getRoleChangedTemplate,
+  getWelcomeMemberTemplate,
 } from '@/features/communications/lib/email-templates';
 import { logEmail } from '@/features/communications/lib/helper';
 import {
@@ -184,6 +196,36 @@ export const organizationsRouter = createTRPCRouter({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to retrieve created organization',
+        });
+      }
+
+      // Send organization registered welcome email
+      try {
+        const emailData: OrganizationRegisteredData = {
+          organizationName: createdOrganization.name,
+          creatorName: ctx.session.user.name || ctx.session.user.email || 'Administrator',
+          dashboardUrl: `${ctx.req?.headers.get('origin') || process.env.NEXTAUTH_URL}/organizations/${createdOrganization.id}`,
+        };
+
+        const emailTemplate = getOrganizationRegisteredTemplate(emailData);
+
+        await sendEmail({
+          to: ctx.session.user.email!,
+          subject: emailTemplate.subject,
+          html: emailTemplate.html,
+          text: emailTemplate.text,
+        });
+
+        logger.info('Organization registered email sent successfully', {
+          to: sanitizeEmail(ctx.session.user.email!),
+          organizationId: createdOrganization.id,
+        });
+      } catch (error) {
+        // Log error but don't fail the organization creation
+        logger.error('Failed to send organization registered email', {
+          error: error instanceof Error ? error.message : String(error),
+          to: sanitizeEmail(ctx.session.user.email!),
+          organizationId: createdOrganization.id,
         });
       }
 
@@ -859,7 +901,42 @@ export const organizationsRouter = createTRPCRouter({
         },
       });
 
-      // TODO: Send invitation email
+      // Send invitation email
+      try {
+        const emailData: OrganizationInvitationData = {
+          organizationName: invitation.organization.name,
+          inviterName: invitation.invitedBy.name || 'Organization Admin',
+          inviterEmail: invitation.invitedBy.email || '',
+          recipientEmail: invitation.email,
+          role: 'Provider', // Provider invitations are always for Provider role
+          invitationToken: invitation.token,
+          expiresAt: invitation.expiresAt,
+        };
+
+        const emailTemplate = getOrganizationInvitationTemplate(emailData);
+
+        await sendEmail({
+          to: invitation.email,
+          subject: emailTemplate.subject,
+          html: emailTemplate.html,
+          text: emailTemplate.text,
+        });
+
+        logger.info('Provider invitation email sent successfully', {
+          organizationId,
+          invitationId: invitation.id,
+          recipientEmail: sanitizeEmail(invitation.email),
+        });
+      } catch (emailError) {
+        // Log error but don't fail the invitation creation
+        // The invitation was created successfully, email is best-effort
+        logger.error('Failed to send provider invitation email', {
+          organizationId,
+          invitationId: invitation.id,
+          recipientEmail: sanitizeEmail(invitation.email),
+          error: emailError instanceof Error ? emailError.message : String(emailError),
+        });
+      }
 
       return invitation;
     }),
@@ -1417,6 +1494,38 @@ export const organizationsRouter = createTRPCRouter({
         return membership;
       });
 
+      // Send welcome email to new member
+      try {
+        const emailData: WelcomeMemberData = {
+          organizationName: result.organization.name,
+          memberName: result.user.name || result.user.email || 'Member',
+          role: result.role,
+          dashboardUrl: `${ctx.req?.headers.get('origin') || process.env.NEXTAUTH_URL}/organizations/${result.organizationId}`,
+        };
+
+        const emailTemplate = getWelcomeMemberTemplate(emailData);
+
+        await sendEmail({
+          to: result.user.email!,
+          subject: emailTemplate.subject,
+          html: emailTemplate.html,
+          text: emailTemplate.text,
+        });
+
+        logger.info('Welcome member email sent successfully', {
+          to: sanitizeEmail(result.user.email!),
+          organizationId: result.organizationId,
+          memberId: result.id,
+        });
+      } catch (error) {
+        // Log error but don't fail the membership creation
+        logger.error('Failed to send welcome member email', {
+          error: error instanceof Error ? error.message : String(error),
+          to: sanitizeEmail(result.user.email!),
+          organizationId: result.organizationId,
+        });
+      }
+
       return result;
     }),
 
@@ -1439,7 +1548,16 @@ export const organizationsRouter = createTRPCRouter({
       // Find invitation
       const invitation = await ctx.prisma.organizationInvitation.findUnique({
         where: { token: input.token },
-        include: { organization: true },
+        include: {
+          organization: true,
+          invitedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
       });
 
       if (!invitation) {
@@ -1469,6 +1587,39 @@ export const organizationsRouter = createTRPCRouter({
           status: 'DECLINED',
         },
       });
+
+      // Send rejection notification email to inviter
+      try {
+        const emailData: InvitationRejectedData = {
+          organizationName: invitation.organization.name,
+          inviterName:
+            invitation.invitedBy.name || invitation.invitedBy.email || 'Organization Administrator',
+          recipientEmail: invitation.email,
+          rejectedAt: nowUTC(),
+        };
+
+        const emailTemplate = getInvitationRejectedTemplate(emailData);
+
+        await sendEmail({
+          to: invitation.invitedBy.email!,
+          subject: emailTemplate.subject,
+          html: emailTemplate.html,
+          text: emailTemplate.text,
+        });
+
+        logger.info('Invitation rejected notification sent successfully', {
+          to: sanitizeEmail(invitation.invitedBy.email!),
+          organizationId: invitation.organizationId,
+          invitationId: invitation.id,
+        });
+      } catch (error) {
+        // Log error but don't fail the rejection
+        logger.error('Failed to send invitation rejected email', {
+          error: error instanceof Error ? error.message : String(error),
+          to: sanitizeEmail(invitation.invitedBy.email!),
+          organizationId: invitation.organizationId,
+        });
+      }
 
       return {
         message: `Invitation to ${invitation.organization.name} declined`,
@@ -1534,6 +1685,9 @@ export const organizationsRouter = createTRPCRouter({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot change your own role' });
       }
 
+      // Store old role for email notification
+      const oldRole = targetMembership.role;
+
       // tx-safe: single write, role change only, validated by business logic
       // Update role
       const updatedMembership = await ctx.prisma.organizationMembership.update({
@@ -1547,8 +1701,50 @@ export const organizationsRouter = createTRPCRouter({
               email: true,
             },
           },
+          organization: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       });
+
+      // Send role changed email to member
+      try {
+        const emailData: RoleChangedData = {
+          organizationName: updatedMembership.organization.name,
+          memberName: updatedMembership.user.name || updatedMembership.user.email || 'Member',
+          oldRole,
+          newRole: updatedMembership.role,
+          changedBy:
+            ctx.session.user.name || ctx.session.user.email || 'Organization Administrator',
+        };
+
+        const emailTemplate = getRoleChangedTemplate(emailData);
+
+        await sendEmail({
+          to: updatedMembership.user.email!,
+          subject: emailTemplate.subject,
+          html: emailTemplate.html,
+          text: emailTemplate.text,
+        });
+
+        logger.info('Role changed email sent successfully', {
+          to: sanitizeEmail(updatedMembership.user.email!),
+          organizationId: updatedMembership.organizationId,
+          memberId: updatedMembership.id,
+          oldRole,
+          newRole: updatedMembership.role,
+        });
+      } catch (error) {
+        // Log error but don't fail the role change
+        logger.error('Failed to send role changed email', {
+          error: error instanceof Error ? error.message : String(error),
+          to: sanitizeEmail(updatedMembership.user.email!),
+          organizationId: updatedMembership.organizationId,
+        });
+      }
 
       return updatedMembership;
     }),
@@ -1591,7 +1787,15 @@ export const organizationsRouter = createTRPCRouter({
       // Get the membership to be removed
       const targetMembership = await ctx.prisma.organizationMembership.findUnique({
         where: { id: input.memberId },
-        include: { user: true },
+        include: {
+          user: true,
+          organization: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
       });
 
       if (!targetMembership || targetMembership.organizationId !== input.organizationId) {
@@ -1629,6 +1833,38 @@ export const organizationsRouter = createTRPCRouter({
       await ctx.prisma.organizationMembership.delete({
         where: { id: input.memberId },
       });
+
+      // Send member removed email
+      try {
+        const emailData: MemberRemovedData = {
+          organizationName: targetMembership.organization.name,
+          memberName: targetMembership.user.name || targetMembership.user.email || 'Member',
+          removedBy:
+            ctx.session.user.name || ctx.session.user.email || 'Organization Administrator',
+        };
+
+        const emailTemplate = getMemberRemovedTemplate(emailData);
+
+        await sendEmail({
+          to: targetMembership.user.email!,
+          subject: emailTemplate.subject,
+          html: emailTemplate.html,
+          text: emailTemplate.text,
+        });
+
+        logger.info('Member removed email sent successfully', {
+          to: sanitizeEmail(targetMembership.user.email!),
+          organizationId: input.organizationId,
+          memberId: input.memberId,
+        });
+      } catch (error) {
+        // Log error but don't fail the removal
+        logger.error('Failed to send member removed email', {
+          error: error instanceof Error ? error.message : String(error),
+          to: sanitizeEmail(targetMembership.user.email!),
+          organizationId: input.organizationId,
+        });
+      }
 
       return {
         message: `${targetMembership.user.email} removed from organization`,
@@ -1681,6 +1917,14 @@ export const organizationsRouter = createTRPCRouter({
       // Find the invitation
       const invitation = await ctx.prisma.organizationInvitation.findUnique({
         where: { id: input.invitationId },
+        include: {
+          organization: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
       });
 
       if (!invitation || invitation.organizationId !== input.organizationId) {
@@ -1702,6 +1946,36 @@ export const organizationsRouter = createTRPCRouter({
           status: 'CANCELLED',
         },
       });
+
+      // Send invitation cancelled email
+      try {
+        const emailData: InvitationCancelledData = {
+          organizationName: invitation.organization.name,
+          recipientEmail: invitation.email,
+        };
+
+        const emailTemplate = getInvitationCancelledTemplate(emailData);
+
+        await sendEmail({
+          to: invitation.email,
+          subject: emailTemplate.subject,
+          html: emailTemplate.html,
+          text: emailTemplate.text,
+        });
+
+        logger.info('Invitation cancelled email sent successfully', {
+          to: sanitizeEmail(invitation.email),
+          organizationId: input.organizationId,
+          invitationId: input.invitationId,
+        });
+      } catch (error) {
+        // Log error but don't fail the cancellation
+        logger.error('Failed to send invitation cancelled email', {
+          error: error instanceof Error ? error.message : String(error),
+          to: sanitizeEmail(invitation.email),
+          organizationId: input.organizationId,
+        });
+      }
 
       return {
         message: `Invitation to ${invitation.email} cancelled`,

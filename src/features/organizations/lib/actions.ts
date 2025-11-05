@@ -32,10 +32,8 @@ export async function registerOrganization(
       return { success: false, error: 'Maximum 10 locations allowed per organization' };
     }
 
-    // TODO: Send organization registration notification email
-    logger.info('Organization registration notification would be sent', {
-      orgName: data.organization.name,
-    });
+    // Email sent in tRPC procedure (see organizations.ts:create)
+    // Server actions return metadata only per CLAUDE.md architecture
 
     // Return minimal metadata for tRPC procedure to create organization
     return {
@@ -102,10 +100,8 @@ export async function validateMemberInvitation(invitationData: {
     const invitationToken = crypto.randomUUID();
     const expiresAt = addMilliseconds(nowUTC(), 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    // TODO: Send invitation email
-    logger.info('Member invitation email would be sent', {
-      email: sanitizeEmail(email),
-    });
+    // Email sent in tRPC procedure (see organizations.ts:inviteMember)
+    // Server actions return metadata only per CLAUDE.md architecture
 
     return {
       success: true,
@@ -142,10 +138,8 @@ export async function validateInvitationAcceptance(token: string): Promise<Membe
       return { success: false, message: 'Invalid invitation token' };
     }
 
-    // TODO: Send welcome email after membership creation
-    logger.info('Welcome email would be sent', {
-      email: sanitizeEmail(currentUser.email || ''),
-    });
+    // Email sent in tRPC procedure (see organizations.ts:acceptInvitation)
+    // Server actions return metadata only per CLAUDE.md architecture
 
     return {
       success: true,
@@ -178,8 +172,8 @@ export async function validateInvitationRejection(token: string): Promise<Member
       return { success: false, message: 'Invalid invitation token' };
     }
 
-    // TODO: Send rejection notification email to inviter
-    logger.info('Invitation rejection notification would be sent');
+    // Email sent in tRPC procedure (see organizations.ts:rejectInvitation)
+    // Server actions return metadata only per CLAUDE.md architecture
 
     return {
       success: true,
@@ -225,8 +219,8 @@ export async function validateMemberRoleChange(
       return { success: false, message: 'Invalid role specified' };
     }
 
-    // TODO: Send role change notification email
-    logger.info('Role change notification would be sent', { memberId });
+    // Email sent in tRPC procedure (see organizations.ts:changeMemberRole)
+    // Server actions return metadata only per CLAUDE.md architecture
 
     return {
       success: true,
@@ -266,8 +260,8 @@ export async function validateMemberRemoval(
       return { success: false, message: 'Missing required fields' };
     }
 
-    // TODO: Send member removal notification email
-    logger.info('Member removal notification would be sent', { memberId });
+    // Email sent in tRPC procedure (see organizations.ts:removeMember)
+    // Server actions return metadata only per CLAUDE.md architecture
 
     return {
       success: true,
@@ -307,10 +301,8 @@ export async function validateInvitationCancellation(
       return { success: false, message: 'Missing required fields' };
     }
 
-    // TODO: Send invitation cancellation email
-    logger.info('Invitation cancellation notification would be sent', {
-      invitationId,
-    });
+    // Email sent in tRPC procedure (see organizations.ts:cancelMemberInvitation)
+    // Server actions return metadata only per CLAUDE.md architecture
 
     return {
       success: true,
