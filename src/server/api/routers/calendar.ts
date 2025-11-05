@@ -2342,6 +2342,8 @@ function generateInstancesForStrategy(
 
 /**
  * Create service configurations for availabilities
+ * FIXED: Batched config creation using Promise.all() instead of nested sequential loops
+ * Reduces 500+ sequential creates to parallel execution for better performance
  */
 async function createServiceConfigsForAvailabilities(
   tx: Prisma.TransactionClient,
@@ -2351,9 +2353,10 @@ async function createServiceConfigsForAvailabilities(
   isOnlineAvailable?: boolean,
   locationId?: string
 ) {
-  for (const availability of availabilities) {
-    for (const service of services) {
-      await tx.serviceAvailabilityConfig.create({
+  // Build all config creation operations
+  const configCreationPromises = availabilities.flatMap((availability) =>
+    services.map((service) =>
+      tx.serviceAvailabilityConfig.create({
         data: {
           serviceId: service.serviceId,
           providerId: providerId,
@@ -2366,9 +2369,12 @@ async function createServiceConfigsForAvailabilities(
             connect: { id: availability.id },
           },
         },
-      });
-    }
-  }
+      })
+    )
+  );
+
+  // Execute all creates in parallel (within transaction)
+  await Promise.all(configCreationPromises);
 }
 
 /**

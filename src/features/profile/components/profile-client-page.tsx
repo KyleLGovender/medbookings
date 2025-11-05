@@ -3,22 +3,25 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { PostRegistrationInvitationHandler } from '@/features/invitations/components/post-registration-invitation-handler';
-import { useOrganizationByUserId } from '@/features/organizations/hooks/use-organization-by-user-id';
 import { ProfileClient } from '@/features/profile/components/profile-client';
 import { useProfile } from '@/features/profile/hooks/use-profile';
 import { useProviderByUserId } from '@/hooks/use-provider-by-user-id';
+import { api } from '@/utils/api';
 
 export function ProfileClientPage() {
   // Fetch the user profile
   const { data: profile, isLoading: isProfileLoading, error: profileError } = useProfile();
   // Fetch the service provider profile if the user is a provider
   const { data: provider, isLoading: isProviderLoading } = useProviderByUserId(profile?.id);
-  // Fetch user's organizations (moved here to avoid cross-feature import in ProfileClient)
+  // Fetch user's organizations (direct tRPC call instead of cross-feature hook import)
   const {
     data: organizations,
     isLoading: isOrganizationsLoading,
     error: organizationsError,
-  } = useOrganizationByUserId(profile?.id);
+  } = api.organizations.getByUserId.useQuery(
+    { userId: profile?.id || '' },
+    { enabled: !!profile?.id }
+  );
 
   // Show loading spinner while profile is loading
   if (isProfileLoading) {

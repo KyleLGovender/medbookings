@@ -930,37 +930,19 @@ export const providersRouter = createTRPCRouter({
           });
         }
 
-        // 2. Delete calculated availability slots for each config
-        for (const config of provider.availabilityConfigs) {
-          await tx.calculatedAvailabilitySlot.deleteMany({
-            where: { serviceConfigId: config.id },
-          });
-        }
-
-        // 3. Delete availability configs
-        if (provider.availabilityConfigs.length > 0) {
-          await tx.serviceAvailabilityConfig.deleteMany({
-            where: { providerId: input.id },
-          });
-        }
-
-        // 4. Delete availability records
-        await tx.availability.deleteMany({
-          where: { providerId: input.id },
-        });
-
-        // 5. Find all slots associated with this provider's availability configs
-        const slotIds: string[] = [];
-        for (const config of provider.availabilityConfigs) {
+        // 2. Find all slots BEFORE deleting them (needed for booking cleanup)
+        // FIXED: Moved slot lookup before deletion to prevent data integrity issues
+        const configIds = provider.availabilityConfigs.map((c) => c.id);
+        let slotIds: string[] = [];
+        if (configIds.length > 0) {
           const slots = await tx.calculatedAvailabilitySlot.findMany({
-            where: { serviceConfigId: config.id },
-            take: 500, // Pagination: Slot cleanup during provider deletion (transactional)
+            where: { serviceConfigId: { in: configIds } },
             select: { id: true },
           });
-          slotIds.push(...slots.map((slot) => slot.id));
+          slotIds = slots.map((slot) => slot.id);
         }
 
-        // 6. Delete bookings associated with those slots
+        // 3. Delete bookings BEFORE deleting slots (maintains referential integrity)
         if (slotIds.length > 0) {
           await tx.booking.deleteMany({
             where: {
@@ -968,6 +950,25 @@ export const providersRouter = createTRPCRouter({
             },
           });
         }
+
+        // 4. Delete calculated availability slots (batched with IN clause)
+        if (configIds.length > 0) {
+          await tx.calculatedAvailabilitySlot.deleteMany({
+            where: { serviceConfigId: { in: configIds } },
+          });
+        }
+
+        // 5. Delete availability configs
+        if (provider.availabilityConfigs.length > 0) {
+          await tx.serviceAvailabilityConfig.deleteMany({
+            where: { providerId: input.id },
+          });
+        }
+
+        // 6. Delete availability records
+        await tx.availability.deleteMany({
+          where: { providerId: input.id },
+        });
 
         // 7. Disconnect services
         if (provider.services.length > 0) {
