@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import * as Sentry from '@sentry/nextjs';
-
+// Import Sentry serverless utility - initializes Sentry on cold start
+import { Sentry } from '@/lib/sentry-server';
 import { nowUTC } from '@/lib/timezone';
 
 export const dynamic = 'force-dynamic'; // Prevent static optimization
