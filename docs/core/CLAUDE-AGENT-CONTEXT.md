@@ -1,8 +1,8 @@
 # MedBookings Codebase Context
 
-**Last Updated**: 2025-11-05
+**Last Updated**: 2025-11-06
 **Purpose**: Cached codebase knowledge for Claude Code (reduces analysis from ~72k to ~15k tokens)
-**Status**: ✅ Current (refreshed via full scan)
+**Status**: ✅ Current (migration cleanup completed)
 
 ---
 
@@ -607,9 +607,19 @@ npx tsc --noEmit && npm run build && npm run lint
 
 ## 11. Recent Changes Log
 
+### 2025-11-06 (Database Migration Cleanup)
+- **Actions**: Migration naming cleanup and verification
+- **Changes**:
+  - Renamed `20251103185523_init` → `20251103185523_add_provider_indexes`
+  - Renamed `20251106052556_init` → `20251106052556_add_status_indexes_and_password_reset_fk`
+  - Created `.env` symlink → `.env.local` (fixes Prisma CLI DATABASE_URL issue)
+  - Verified: TypeScript compilation ✅, Build ✅, ESLint ✅
+  - Database reset performed with full seed data
+  - All 22 migrations now follow proper naming conventions
+
 ### 2025-11-05 (Transaction Safety Sprint)
 - **Commits**: ee7b0ea, 31d212f, d205889, bc5cdb5, 390d491
-- **Changes**: 
+- **Changes**:
   - Added transaction safety for all multi-table operations
   - Fixed critical race condition in `resendProviderInvitation`
   - Documented 26 transaction safety suppressions
