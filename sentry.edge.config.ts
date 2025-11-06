@@ -27,7 +27,8 @@ if (SENTRY_DSN) {
     tracesSampleRate: SENTRY_ENVIRONMENT === 'production' ? 0.05 : 1.0,
 
     // Setting this option to true will print useful information to the console while you're setting up Sentry.
-    debug: process.env.SENTRY_DEBUG === 'true',
+    // TEMPORARILY ENABLED: Debugging why errors aren't being captured
+    debug: true,
 
     // POPIA Compliance: Scrub sensitive data before sending to Sentry
     beforeSend(event, hint) {
