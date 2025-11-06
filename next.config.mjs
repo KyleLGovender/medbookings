@@ -111,9 +111,10 @@ export default withSentryConfig(
     org: process.env.SENTRY_ORG,
     project: process.env.SENTRY_PROJECT,
 
-    // Smart conditional: only upload if SENTRY_AUTH_TOKEN is set
-    // This allows local builds without token while enforcing uploads in production
-    disableSourceMapUpload: !process.env.SENTRY_AUTH_TOKEN,
+    // Disable source map uploads - Vercel build cannot handle upload volume within timeout constraints
+    // Error tracking still works, stack traces just show minified code instead of original source
+    // Alternative: Upload source maps separately via CI/CD (see docs/deployment/SECURITY-CHECKLIST.md)
+    disableSourceMapUpload: true,
   },
   {
     // For all available options, see:
@@ -137,8 +138,7 @@ export default withSentryConfig(
     // https://vercel.com/docs/cron-jobs
     automaticVercelMonitors: true,
 
-    // Upload source maps AFTER build completes instead of blocking the build
-    // This prevents Vercel build timeouts while still uploading all source maps
-    useRunAfterProductionCompileHook: true,
+    // Note: useRunAfterProductionCompileHook doesn't solve timeout issues with large source map uploads
+    // Disabling source map uploads entirely is the only reliable solution for Vercel deployment
   }
 );
