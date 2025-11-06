@@ -15,9 +15,11 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // experimental: {
-  //   typedRoutes: true,
-  // },
+  experimental: {
+    // Enable instrumentation hook for Sentry initialization
+    instrumentationHook: true,
+    // typedRoutes: true,
+  },
   transpilePackages: ['react-hook-form'],
   images: {
     remotePatterns: [
