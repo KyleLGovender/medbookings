@@ -103,27 +103,26 @@ export default withSentryConfig(
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
-    // Enable debug logging to diagnose upload issues
-    silent: false,
-    debug: true,
-    telemetry: false, // Disable plugin telemetry to reduce overhead
+    // Disable all output to reduce build overhead
+    silent: true,
 
     org: process.env.SENTRY_ORG,
     project: process.env.SENTRY_PROJECT,
 
-    // Disable source map uploads - Vercel build cannot handle upload volume within timeout constraints
-    // Error tracking still works, stack traces just show minified code instead of original source
-    // Alternative: Upload source maps separately via CI/CD (see docs/deployment/SECURITY-CHECKLIST.md)
+    // CRITICAL: Multiple flags needed to fully disable uploads
     disableSourceMapUpload: true,
+
+    // Also set auth token to undefined to prevent uploads
+    authToken: undefined,
   },
   {
     // For all available options, see:
     // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-    // Upload a larger set of source maps for prettier stack traces (increases build time)
-    widenClientFileUpload: true,
+    // CRITICAL: Disable file uploads to prevent Vercel build timeouts
+    widenClientFileUpload: false,
 
-    // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers (increases server load)
+    // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers
     tunnelRoute: '/monitoring',
 
     // Hides source maps from generated client bundles
@@ -132,13 +131,12 @@ export default withSentryConfig(
     // Automatically tree-shake Sentry logger statements to reduce bundle size
     disableLogger: true,
 
-    // Enables automatic instrumentation of Vercel Cron Monitors.
-    // See the following for more information:
-    // https://docs.sentry.io/product/crons/
-    // https://vercel.com/docs/cron-jobs
+    // Enables automatic instrumentation of Vercel Cron Monitors
     automaticVercelMonitors: true,
 
-    // Note: useRunAfterProductionCompileHook doesn't solve timeout issues with large source map uploads
-    // Disabling source map uploads entirely is the only reliable solution for Vercel deployment
+    // Disable source map generation to prevent uploads
+    sourcemaps: {
+      disable: true,
+    },
   }
 );
