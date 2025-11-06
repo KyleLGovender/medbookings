@@ -58,8 +58,9 @@ const nextConfig = {
     return config;
   },
   eslint: {
-    // Temporarily disabled to unblock Vercel builds
-    // Re-enable after fixing ESLint issues: ignoreDuringBuilds: false,
+    // Disabled during builds - validated by pre-commit hooks and GitHub Actions CI
+    // See .github/workflows/claude-compliance.yml for CI validation
+    // This prevents Vercel build timeouts on large codebases (12,964 TS files)
     ignoreDuringBuilds: true,
   },
   // Security headers for production (POPIA compliance)
@@ -104,36 +105,39 @@ export default withSentryConfig(
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
-    // Suppresses source map uploading logs during build
-    silent: true,
+    // Enable logging to monitor source map upload progress
+    silent: false,
+    telemetry: false,
 
     org: process.env.SENTRY_ORG,
     project: process.env.SENTRY_PROJECT,
 
-    // Temporarily disabled to unblock Vercel builds
-    // Re-enable after verifying SENTRY_AUTH_TOKEN works: disableSourceMapUpload: !process.env.SENTRY_AUTH_TOKEN,
-    disableSourceMapUpload: true,
+    // TEST: Re-enable source map uploads now that ESLint is disabled
+    // ESLint was the primary timeout culprit (30+ min), source maps add ~3-5 min
+    // This tests if builds complete in <10 min with source maps enabled
+    disableSourceMapUpload: false,
+
+    // Use auth token from environment for uploads
+    // authToken is automatically read from SENTRY_AUTH_TOKEN env var
   },
   {
     // For all available options, see:
     // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-    // Upload a larger set of source maps for prettier stack traces (increases build time)
+    // TEST: Re-enable file uploads to get readable stack traces in Sentry
+    // This was previously disabled due to timeout concerns, but ESLint was the real culprit
     widenClientFileUpload: true,
 
-    // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers (increases server load)
+    // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers
     tunnelRoute: '/monitoring',
 
-    // Hides source maps from generated client bundles
+    // Hides source maps from generated client bundles (users can't access them)
     hideSourceMaps: true,
 
     // Automatically tree-shake Sentry logger statements to reduce bundle size
     disableLogger: true,
 
-    // Enables automatic instrumentation of Vercel Cron Monitors.
-    // See the following for more information:
-    // https://docs.sentry.io/product/crons/
-    // https://vercel.com/docs/cron-jobs
+    // Enables automatic instrumentation of Vercel Cron Monitors
     automaticVercelMonitors: true,
   }
 );

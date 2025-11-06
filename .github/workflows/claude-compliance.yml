@@ -2,9 +2,9 @@ name: CLAUDE.md Compliance
 
 on:
   push:
-    branches: [main, master, develop, kyle-dev-branch]
+    branches: [main, master, develop, kyle-dev-branch, staging]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master, develop, staging]
 
 jobs:
   claude-validation:
