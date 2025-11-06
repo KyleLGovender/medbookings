@@ -3,6 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect } from 'react';
 
+import * as Sentry from '@sentry/nextjs';
+
 import { nowUTC } from '@/lib/timezone';
 
 // Simple button matching the login page design
@@ -62,12 +64,18 @@ export default function AuthErrorPage() {
   // Log error for monitoring
   useEffect(() => {
     if (error) {
-      // Error is displayed to user via UI below
-      // TODO: In production, send to monitoring service (e.g., Sentry, LogRocket, etc.)
-      // Example:
-      // if (process.env.NODE_ENV === 'production') {
-      //   logToMonitoring({ type: 'auth_error', error, timestamp: nowUTC() });
-      // }
+      // Send to Sentry for error tracking
+      Sentry.captureMessage(`Authentication error: ${error}`, {
+        level: 'error',
+        tags: {
+          errorType: 'auth_error',
+          errorCode: error,
+        },
+        extra: {
+          timestamp: nowUTC().toISOString(),
+          errorCode: error,
+        },
+      });
     }
   }, [error]);
 

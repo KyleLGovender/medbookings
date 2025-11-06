@@ -312,20 +312,14 @@ export async function apiRequest<T = unknown>(
  * @param context - Additional context
  */
 export function logApiError(error: ApiError, context?: Record<string, unknown>): void {
-  // In development, log to console
-  if (env.NODE_ENV === 'development') {
-    logger.error('API Error', {
-      code: error.code,
-      status: error.status,
-      message: error.message,
-      retryable: error.retryable,
-      context,
-    });
-  }
-
-  // In production, you would send to your error monitoring service
-  // Example: Sentry, LogRocket, Datadog, etc.
-  // errorMonitoringService.captureError(error, context);
+  // Always log to our logger system (which sends to Sentry in production)
+  logger.error('API Error', error, {
+    code: error.code,
+    status: error.status,
+    message: error.message,
+    retryable: error.retryable,
+    context,
+  });
 }
 
 // =============================================================================
