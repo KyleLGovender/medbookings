@@ -105,29 +105,33 @@ export default withSentryConfig(
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
-    // Disable all output to reduce build overhead
-    silent: true,
+    // Enable logging to monitor source map upload progress
+    silent: false,
+    telemetry: false,
 
     org: process.env.SENTRY_ORG,
     project: process.env.SENTRY_PROJECT,
 
-    // CRITICAL: Multiple flags needed to fully disable uploads
-    disableSourceMapUpload: true,
+    // TEST: Re-enable source map uploads now that ESLint is disabled
+    // ESLint was the primary timeout culprit (30+ min), source maps add ~3-5 min
+    // This tests if builds complete in <10 min with source maps enabled
+    disableSourceMapUpload: false,
 
-    // Also set auth token to undefined to prevent uploads
-    authToken: undefined,
+    // Use auth token from environment for uploads
+    // authToken is automatically read from SENTRY_AUTH_TOKEN env var
   },
   {
     // For all available options, see:
     // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-    // CRITICAL: Disable file uploads to prevent Vercel build timeouts
-    widenClientFileUpload: false,
+    // TEST: Re-enable file uploads to get readable stack traces in Sentry
+    // This was previously disabled due to timeout concerns, but ESLint was the real culprit
+    widenClientFileUpload: true,
 
     // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers
     tunnelRoute: '/monitoring',
 
-    // Hides source maps from generated client bundles
+    // Hides source maps from generated client bundles (users can't access them)
     hideSourceMaps: true,
 
     // Automatically tree-shake Sentry logger statements to reduce bundle size
@@ -135,10 +139,5 @@ export default withSentryConfig(
 
     // Enables automatic instrumentation of Vercel Cron Monitors
     automaticVercelMonitors: true,
-
-    // Disable source map generation to prevent uploads
-    sourcemaps: {
-      disable: true,
-    },
   }
 );
