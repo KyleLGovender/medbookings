@@ -58,9 +58,8 @@ const nextConfig = {
     return config;
   },
   eslint: {
-    // Temporarily disabled to unblock Vercel builds
-    // Re-enable after fixing ESLint issues: ignoreDuringBuilds: false,
-    ignoreDuringBuilds: true,
+    // ESLint verified clean - strict mode re-enabled
+    ignoreDuringBuilds: false,
   },
   // Security headers for production (POPIA compliance)
   headers: async () => [
@@ -110,9 +109,9 @@ export default withSentryConfig(
     org: process.env.SENTRY_ORG,
     project: process.env.SENTRY_PROJECT,
 
-    // Temporarily disabled to unblock Vercel builds
-    // Re-enable after verifying SENTRY_AUTH_TOKEN works: disableSourceMapUpload: !process.env.SENTRY_AUTH_TOKEN,
-    disableSourceMapUpload: true,
+    // Smart conditional: only upload if SENTRY_AUTH_TOKEN is set
+    // This allows local builds without token while enforcing uploads in production
+    disableSourceMapUpload: !process.env.SENTRY_AUTH_TOKEN,
   },
   {
     // For all available options, see:
