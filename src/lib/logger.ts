@@ -9,7 +9,13 @@
  * - logger.warn() - Warnings that need attention
  * - logger.error() - Errors that need investigation
  * - logger.audit() - Security/compliance events (always logged)
+ *
+ * Integration:
+ * - Sentry integration for error tracking in production
+ * - All errors automatically sent to Sentry with sanitized context
  */
+import * as Sentry from '@sentry/nextjs';
+
 import { nowUTC } from '@/lib/timezone';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'audit';
@@ -183,7 +189,7 @@ class Logger {
   }
 
   /**
-   * Log error message
+   * Log error message and send to Sentry in production
    */
   error(
     message: string,
@@ -207,6 +213,24 @@ class Logger {
       context: errorContext,
       requestId,
     });
+
+    // Send to Sentry in production (with sanitized context)
+    if (this.isProduction && error) {
+      Sentry.captureException(error, {
+        level: 'error',
+        extra: sanitizeContext(context || {}),
+        tags: {
+          feature: context?.feature,
+          requestId,
+        },
+        contexts: {
+          custom: {
+            message,
+            timestamp: nowUTC().toISOString(),
+          },
+        },
+      });
+    }
   }
 
   /**
@@ -216,18 +240,42 @@ class Logger {
    * - PHI access
    * - Admin actions
    * - Data modifications
+   *
+   * Audit events are also sent to Sentry in production for additional tracking
    */
   audit(message: string, context?: Record<string, any>, requestId?: string): void {
+    const auditContext = {
+      ...context,
+      environment: process.env.NODE_ENV,
+    };
+
     this.output({
       level: 'audit',
       message,
       timestamp: nowUTC().toISOString(),
-      context: {
-        ...context,
-        environment: process.env.NODE_ENV,
-      },
+      context: auditContext,
       requestId,
     });
+
+    // Send audit events to Sentry in production (for security monitoring)
+    if (this.isProduction) {
+      Sentry.captureMessage(message, {
+        level: 'info',
+        extra: sanitizeContext(context || {}),
+        tags: {
+          audit: 'true',
+          feature: context?.feature,
+          requestId,
+        },
+        contexts: {
+          custom: {
+            auditType: 'security',
+            timestamp: nowUTC().toISOString(),
+            environment: process.env.NODE_ENV,
+          },
+        },
+      });
+    }
   }
 }
 

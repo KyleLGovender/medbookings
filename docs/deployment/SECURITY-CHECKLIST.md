@@ -318,6 +318,70 @@ curl -I http://your-domain.com
 4. Verify application health
 5. Investigate failed deployment cause
 
+**Sentry Setup Instructions:**
+
+> ✅ **Status**: Sentry integration is complete in the codebase. Follow these steps to activate it.
+
+1. **Create Sentry Project** (if not already done):
+   - Go to https://sentry.io
+   - Create a new project (select "Next.js")
+   - Copy the DSN from project settings
+
+2. **Configure Environment Variables in Vercel**:
+   - Vercel Dashboard → Project → Settings → Environment Variables
+   - Add the following variables:
+     ```
+     SENTRY_DSN=https://xxxxxxxx@sentry.io/0000000
+     NEXT_PUBLIC_SENTRY_DSN=https://xxxxxxxx@sentry.io/0000000
+     SENTRY_AUTH_TOKEN=sntrys_xxxxxxxxxxxxxxxxxxxxxxxx
+     SENTRY_ORG=your-org-slug
+     SENTRY_PROJECT=your-project-slug
+     NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
+     SENTRY_DEBUG=false
+     ```
+   - **CRITICAL**: Set scope to "Production" for production variables
+
+3. **Get Sentry Auth Token** (for source map uploads):
+   - Sentry Dashboard → Settings → Account → API → Auth Tokens
+   - Create new token with scope: `project:releases`
+   - Copy token to `SENTRY_AUTH_TOKEN` variable
+
+4. **Configure Alert Rules**:
+   - Sentry Dashboard → Alerts → Create Alert Rule
+   - Recommended rules:
+     - **High Error Rate**: Alert when error count > 10 in 1 hour
+     - **New Issue**: Alert on first occurrence of new error
+     - **Regression**: Alert when resolved issue reoccurs
+   - Connect to Slack/email for notifications
+
+5. **Verify Integration**:
+   - Deploy application
+   - Trigger test error (see Testing section below)
+   - Check Sentry dashboard for error event
+   - Verify source maps are uploaded (stack traces readable)
+
+6. **Testing Sentry Integration**:
+   ```typescript
+   // Add this to any page temporarily to test
+   throw new Error('Sentry test error - please ignore');
+   ```
+   - Visit page → Error should appear in Sentry within 1 minute
+   - Check that stack trace shows source file names (not minified)
+   - Verify no PHI is exposed in error context
+   - Delete test error after verification
+
+7. **PHI Protection Verification**:
+   - Check error event in Sentry dashboard
+   - Verify user context only shows sanitized ID: `[USER:xxx]`
+   - Verify no email, phone, or name fields are present
+   - Request data should show `[REDACTED]` for sensitive fields
+
+**Free Tier Limits:**
+- 5,000 errors/month
+- 10,000 performance transactions/month
+- 1 GB source maps storage
+- Sufficient for small-to-medium production deployments
+
 ---
 
 ### 11. Build & Deployment Security

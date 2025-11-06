@@ -174,6 +174,51 @@ UPSTASH_REDIS_REST_TOKEN="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 ---
 
+### Error Tracking (Sentry)
+
+```bash
+SENTRY_DSN="https://xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@o000000.ingest.sentry.io/0000000"
+NEXT_PUBLIC_SENTRY_DSN="https://xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@o000000.ingest.sentry.io/0000000"
+SENTRY_AUTH_TOKEN="sntrys_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+SENTRY_ORG="your-org-slug"
+SENTRY_PROJECT="your-project-slug"
+NEXT_PUBLIC_SENTRY_ENVIRONMENT="production"
+SENTRY_DEBUG="false"
+```
+
+**Status**: ⚠️ Optional (Recommended for production)
+**Used for**: Error tracking, performance monitoring, and debugging
+
+**Setup**: https://sentry.io/signup/
+**Free Tier**: 5,000 errors/month, 10,000 performance transactions/month
+
+**Why Recommended**:
+- Real-time error notifications (email, Slack)
+- Source-mapped stack traces (even in production)
+- Performance monitoring for slow API calls
+- User context and breadcrumbs for debugging
+- POPIA-compliant (PHI sanitization built-in)
+
+**Configuration**:
+- `SENTRY_DSN`: Public DSN (safe to expose client-side)
+- `NEXT_PUBLIC_SENTRY_DSN`: Same as SENTRY_DSN (for browser)
+- `SENTRY_AUTH_TOKEN`: Used for source map uploads (keep secret)
+- `SENTRY_ORG`: Your Sentry organization slug
+- `SENTRY_PROJECT`: Your Sentry project slug
+- `NEXT_PUBLIC_SENTRY_ENVIRONMENT`: Environment name (production/staging/development)
+- `SENTRY_DEBUG`: Enable SDK debug logs (false in production)
+
+**Getting Started**:
+1. Sign up at https://sentry.io
+2. Create a Next.js project
+3. Copy DSN from project settings
+4. Add variables to Vercel Dashboard
+5. Deploy to see errors in Sentry dashboard
+
+**PHI Protection**: Automatic sanitization via `beforeSend` hook (no PHI sent to Sentry)
+
+---
+
 ### Additional Services
 
 ```bash
