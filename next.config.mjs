@@ -103,8 +103,10 @@ export default withSentryConfig(
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
-    // Suppresses source map uploading logs during build
-    silent: true,
+    // Enable debug logging to diagnose upload issues
+    silent: false,
+    debug: true,
+    telemetry: false, // Disable plugin telemetry to reduce overhead
 
     org: process.env.SENTRY_ORG,
     project: process.env.SENTRY_PROJECT,
@@ -134,5 +136,9 @@ export default withSentryConfig(
     // https://docs.sentry.io/product/crons/
     // https://vercel.com/docs/cron-jobs
     automaticVercelMonitors: true,
+
+    // Upload source maps AFTER build completes instead of blocking the build
+    // This prevents Vercel build timeouts while still uploading all source maps
+    useRunAfterProductionCompileHook: true,
   }
 );
