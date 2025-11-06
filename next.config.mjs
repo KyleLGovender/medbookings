@@ -111,8 +111,9 @@ export default withSentryConfig(
     org: process.env.SENTRY_ORG,
     project: process.env.SENTRY_PROJECT,
 
-    // Only upload source maps in production builds
-    disableSourceMapUpload: process.env.NODE_ENV !== 'production',
+    // Temporarily disabled to unblock Vercel builds
+    // Re-enable after verifying SENTRY_AUTH_TOKEN works: disableSourceMapUpload: !process.env.SENTRY_AUTH_TOKEN,
+    disableSourceMapUpload: true,
   },
   {
     // For all available options, see:
