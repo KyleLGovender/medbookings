@@ -1,8 +1,8 @@
 # MedBookings Codebase Context
 
-**Last Updated**: 2025-11-06
+**Last Updated**: 2025-11-07
 **Purpose**: Cached codebase knowledge for Claude Code (reduces analysis from ~72k to ~15k tokens)
-**Status**: ✅ Current (migration cleanup completed)
+**Status**: ✅ Current (Sentry integration complete, production-ready)
 
 ---
 
@@ -20,7 +20,7 @@
   "validation": "Zod 3.25.48",
   "testing": "Playwright 1.54.1 (e2e only)",
   "deployment": "Vercel",
-  "monitoring": "Vercel Analytics + Speed Insights"
+  "monitoring": "Vercel Analytics + Speed Insights + Sentry 10.23.0"
 }
 ```
 
@@ -31,6 +31,7 @@
 - **Rate Limiting**: Upstash Redis (@upstash/ratelimit 2.0.6)
 - **Maps**: @react-google-maps/api 2.20.7
 - **Security**: bcryptjs 3.0.2 (password hashing)
+- **Error Tracking**: @sentry/nextjs 10.23.0 (serverless-compatible)
 
 ### Business Domain
 **Healthcare appointment management platform for South Africa**
@@ -43,7 +44,7 @@
 
 ## 2. Database Schema (Prisma)
 
-### Core Entities
+### Core Entities (34 Models)
 
 #### User (Authentication & Profile)
 ```prisma
@@ -56,7 +57,7 @@ model User {
   passwordMigratedAt: DateTime?  // SHA-256 → bcrypt migration tracking
   passwordMigrationDeadline: DateTime?  // 90 days from creation
   accountLockedUntil: DateTime?  // Rate limiting lockouts
-  
+
   // Relations: provider, bookings, organizations, reviews, etc.
 }
 ```
@@ -72,11 +73,11 @@ model Provider {
   approvedById: String?
   approvedAt: DateTime?
   rejectionReason: String?
-  
+
   trialStarted: DateTime?
   trialEnded: DateTime?
   trialStatus: TrialStatus?
-  
+
   // Relations: availabilities, services, subscriptions, typeAssignments
 }
 ```
@@ -89,7 +90,7 @@ model Organization {
   status: OrganizationStatus @default(PENDING_APPROVAL)
   billingModel: OrganizationBillingModel @default(CONSOLIDATED)
   // CONSOLIDATED | PER_LOCATION
-  
+
   // Relations: locations, memberships, providerConnections
 }
 ```
@@ -103,7 +104,7 @@ Availability {
   startTime/endTime: DateTime  // UTC storage
   isRecurring: Boolean
   recurrencePattern: Json?  // { frequency, interval, daysOfWeek, until }
-  
+
   // → generates CalculatedAvailabilitySlot[]
 }
 
@@ -112,7 +113,7 @@ CalculatedAvailabilitySlot {
   serviceId: String
   status: SlotStatus  // AVAILABLE | BOOKED | BLOCKED | INVALID
   blockedByEventId: String?  // Google Calendar event blocking slot
-  
+
   // → booking: Booking? (one-to-one)
 }
 
@@ -136,7 +137,7 @@ CalendarIntegration {
   syncDirection: CalendarSyncDirection  // BIDIRECTIONAL | IMPORT_ONLY | EXPORT_ONLY
   autoCreateMeetLinks: Boolean
   syncIntervalMinutes: Int @default(15)
-  
+
   // Webhook support for real-time sync
   webhookChannelId: String?
   webhookExpiresAt: DateTime?
@@ -146,7 +147,7 @@ CalendarEvent {
   externalEventId: String  // Google Calendar event ID
   blocksAvailability: Boolean
   syncStatus: CalendarEventSyncStatus
-  
+
   // → blockedSlots: CalculatedAvailabilitySlot[]
 }
 ```
@@ -158,10 +159,10 @@ Subscription {
   type: SubscriptionType  // BASE | WEBSITE_HOSTING | REVIEW_PROMOTION
   status: SubscriptionStatus  // ACTIVE | TRIALING | PAST_DUE | CANCELLED
   planId: String
-  
+
   currentMonthSlots: Int  // Usage tracking
   billingCycleStart/End: DateTime
-  
+
   // → billedSlots: CalculatedAvailabilitySlot[]
 }
 
@@ -169,6 +170,21 @@ SubscriptionPlan {
   basePrice: Decimal  // e.g., R300
   includedSlots: Int @default(30)
   tierPricing: Json  // { "31-50": 5, "51-100": 4, "101+": 3 }
+}
+```
+
+#### Audit & Compliance
+```prisma
+AuditLog {
+  userId: String?
+  userEmail: String?
+  action: String
+  category: AuditCategory  // AUTHENTICATION | PHI_ACCESS | ADMIN_ACTION | etc.
+  resource: String?
+  resourceId: String?
+  ipAddress: String?
+  metadata: Json?
+  createdAt: DateTime @default(now())
 }
 ```
 
@@ -184,6 +200,7 @@ SlotStatus: AVAILABLE | BOOKED | BLOCKED | INVALID
 BookingStatus: PENDING | CONFIRMED | CANCELLED | COMPLETED | NO_SHOW
 SchedulingRule: CONTINUOUS | ON_THE_HOUR | ON_THE_HALF_HOUR
 Languages: English | IsiZulu | IsiXhosa | Afrikaans | ... (11 SA languages)
+AuditCategory: AUTHENTICATION | AUTHORIZATION | PHI_ACCESS | ADMIN_ACTION | DATA_MODIFICATION
 ```
 
 ### Indexes (Performance-Critical)
@@ -203,7 +220,6 @@ Languages: English | IsiZulu | IsiXhosa | Afrikaans | ... (11 SA languages)
 export const appRouter = createTRPCRouter({
   admin: adminRouter,           // 1084 lines - provider/org approval, analytics
   auth: authRouter,             //  383 lines - login, registration, verification
-  billing: billingRouter,       //  253 lines - subscriptions, payments, usage
   calendar: calendarRouter,     // 2555 lines - availability, bookings, slots
   communications: communicationsRouter,  //   22 lines - email/SMS endpoints
   debug: debugRouter,           //   20 lines - development utilities
@@ -211,6 +227,7 @@ export const appRouter = createTRPCRouter({
   profile: profileRouter,       //  195 lines - user profile CRUD
   providers: providersRouter,   // 3132 lines - provider onboarding, services
   settings: settingsRouter,     //  371 lines - user preferences
+  // billing: billingRouter,    // Commented out (Stripe integration incomplete)
 });
 ```
 
@@ -257,7 +274,7 @@ export function useAdminProvider(id: string) {
 
 ## 4. Feature Architecture
 
-### Feature Directory Structure
+### Feature Directory Structure (12 Features)
 ```
 src/features/
 ├── admin/          # Admin dashboard, approval workflows
@@ -269,7 +286,7 @@ src/features/
 ├── organizations/  # Org management, locations, provider networks
 ├── profile/        # User profile management
 ├── providers/      # Provider onboarding, services, requirements
-├── reviews/        # Review system (future)
+├── reviews/        # Review system (Google My Business sync planned)
 └── settings/       # User preferences
 ```
 
@@ -284,13 +301,13 @@ calendar/
 │   ├── user-bookings-page.tsx
 │   └── ...
 ├── hooks/
-│   └── (NO HOOKS - tRPC queries used directly in components)
+│   └── use-availabilities.ts   # tRPC hooks
 ├── lib/
 │   ├── actions.ts              # Server actions (business logic)
 │   ├── slot-generation.ts      # Slot calculation algorithms
 │   ├── recurrence-utils.ts     # Recurring availability
 │   ├── scheduling-rules.ts     # ON_THE_HOUR, etc.
-│   └── ...
+│   └── permissions.ts          # Access control
 └── types/
     ├── types.ts                # Domain types (RecurrencePattern, etc.)
     ├── schemas.ts              # Zod schemas for tRPC input
@@ -298,9 +315,9 @@ calendar/
 ```
 
 ### Key Features by Size
-1. **Calendar** (2555 LOC router) - Core booking flow, availability management, slot generation
-2. **Providers** (3132 LOC router) - Onboarding, service configuration, requirement validation
-3. **Organizations** (1714 LOC router) - Multi-location management, provider networks, invitations
+1. **Providers** (3132 LOC router) - Onboarding, service config, regulatory requirements
+2. **Calendar** (2555 LOC router) - Core booking flow, availability, slot generation
+3. **Organizations** (1714 LOC router) - Multi-location management, provider networks
 4. **Admin** (1084 LOC router) - Approval workflows, analytics, system management
 
 ---
@@ -332,8 +349,8 @@ parseUTC(isoString: string): Date // Parse ISO strings ensuring UTC
 logger.debug('feature', 'message', context)  // Controlled by DEBUG_FEATURE=true
 logger.info('message', context)              // Dev only
 logger.warn('message', context)              // Always logged
-logger.error('message', error, context)      // Always logged
-logger.audit('message', context)             // POPIA compliance - always logged
+logger.error('message', error, context)      // Logged + sent to Sentry
+logger.audit('message', context)             // POPIA compliance - logged + Sentry
 
 // PHI Sanitization (REQUIRED before logging)
 sanitizeEmail('john@example.com')   // → 'jo***@example.com'
@@ -366,6 +383,7 @@ checkRole(allowedRoles: UserRole[]): Promise<User>
 // - Email verification checks (VERIFIED_USER requirement)
 // - Organization membership validation (database queries)
 // - Audit logging for authorization failures
+// - Request ID injection for distributed tracing
 
 // Protected routes:
 // - /admin/* → ADMIN | SUPER_ADMIN
@@ -381,6 +399,16 @@ checkRole(allowedRoles: UserRole[]): Promise<User>
 
 apiRateLimit: 100 requests per 60 seconds      // General API protection
 authRateLimit: 5 requests per 15 minutes       // Brute force prevention (login, etc.)
+```
+
+### Error Tracking (`src/lib/sentry-server.ts`)
+```typescript
+// Sentry integration (serverless-compatible)
+// - All logger.error() calls automatically sent to Sentry in production
+// - All logger.audit() calls sent for security monitoring
+// - Sanitized context (no PHI in error reports)
+// - Source maps enabled for production debugging
+// - Server-side instrumentation via instrumentation.ts
 ```
 
 ---
@@ -406,46 +434,50 @@ authRateLimit: 5 requests per 15 minutes       // Brute force prevention (login,
 'no-console': 'error'  // Prevent PHI leakage (except logger.ts, tests, scripts)
 
 // Type Safety
-'@typescript-eslint/no-explicit-any': 'warn'  // 245+ violations, migrating to 'error'
+'@typescript-eslint/no-explicit-any': 'warn'  // 245+ violations migrated to overrides
 '@typescript-eslint/no-unsafe-assignment': 'warn'
 
-// CLAUDE.md Compliance (Custom Rules)
+// CLAUDE.md Compliance (Custom Rules - 7 rules in /eslint-rules/)
 'rulesdir/no-new-date': 'error'  // Enforce timezone utilities
 'rulesdir/no-type-barrel-exports': 'error'
 'rulesdir/enforce-direct-type-imports': 'error'
 'rulesdir/enforce-type-file-structure': 'warn'
 'rulesdir/enforce-type-file-naming': 'warn'
 'rulesdir/enforce-prisma-derived-patterns': 'warn'
+'rulesdir/type-organization': 'warn'
 
-// Exceptions (with documented reasons):
+// Documented Exceptions:
 // - Type guards: allow (value as any) for runtime validation
 // - tRPC routers: complex Prisma includes create unavoidable any types
 // - Form components: react-hook-form generic types
 // - Google Maps: external library with complex types
+// - Sentry instrumentation: framework integration requires any
 ```
 
 ### Compliance Validators (`scripts/commit-gate/`)
 ```javascript
-compliance-validator.js    // 13 rules (timezone, type safety, PHI, architecture, etc.)
+compliance-validator.js    // 13 rules (timezone, type safety, PHI, architecture)
 transaction-validator.js   // Validates prisma.$transaction() for multi-table ops
 phi-validator.js          // Ensures logger.* calls use sanitization
 ```
 
+### Enforcement Coverage (22 Active Mechanisms)
+- **ESLint Rules**: 7 custom + 2 native
+- **Commit-Gate Validators**: 13 validators
+- **Coverage by Category**:
+  - Timezone: 100% (no-new-date + commit-gate)
+  - Type Safety: 100% (7 ESLint rules)
+  - Architecture: 100% (cross-feature import detection)
+  - PHI Protection: 100% (no-console + PHI validator)
+  - Database Operations: 100% (pagination + transaction validators)
+
 ### POPIA Compliance
 - **Session Timeout**: 30 minutes (enforced in middleware)
-- **Audit Trail**: All PHI access logged via `logger.audit()`
+- **Audit Trail**: All PHI access logged via `logger.audit()` → AuditLog model
 - **Consent Tracking**: User.emailVerified, User.phoneVerified
-- **Data Minimization**: PHI sanitization before logging
+- **Data Minimization**: PHI sanitization before logging/error tracking
 - **Access Control**: Role-based + email verification requirements
-
-### Recent Security Work (Last 5 Commits)
-```
-ee7b0ea - Transaction safety: 20 additional suppressions (documented)
-31d212f - Fix: resendProviderInvitation race condition (admin suppressions)
-d205889 - Transaction safety: auth, admin, profile routers
-bc5cdb5 - Transaction safety: organization operations
-390d491 - Transaction safety: provider requirement workflows
-```
+- **Encryption**: bcrypt password hashing (SHA-256 migration in progress)
 
 ---
 
@@ -538,34 +570,175 @@ Component Props (type-safe all the way)
 
 ---
 
-## 9. Known Issues & TODOs
+## 9. Integration Points
 
-### High Priority (4 items)
-1. **Organization Logo Upload** - Vercel Blob integration needed (~2h)
-   - Files: `features/organizations/components/*/edit-organization-basic-info.tsx`
-   
-2. **Calendar Import/Export** - iCal format support (~4-6h)
-   - Files: `app/(dashboard)/calendar/availability/page.tsx:173,184`
+### Google Services
 
-3. **Organization Calendar View** - Multi-provider calendar (~3-4h)
-   - Files: `app/(dashboard)/organizations/[id]/manage-calendar/page.tsx:197`
+**Google Calendar**:
+- OAuth Flow: `/src/app/api/auth/google/calendar/route.ts`
+- Callback: `/src/app/api/auth/google/calendar/callback/route.ts`
+- Integration Storage: `CalendarIntegration` model (access_token, refresh_token)
+- Sync Operations: `CalendarSyncOperation` model (tracks sync jobs)
+- Event Storage: `CalendarEvent` model (external events block slots)
+- Sync Direction: IMPORT_ONLY | EXPORT_ONLY | BIDIRECTIONAL
+- Sync Types: FULL_SYNC | INCREMENTAL_SYNC | WEBHOOK_SYNC | MANUAL_SYNC
 
-4. **Error Monitoring** - Sentry integration (~1-2h)
-   - Files: `app/(general)/(auth)/error/page.tsx:73`
+**Google Meet**:
+- Settings: `/src/app/api/auth/google/meet-settings/route.ts`
+- Auto-link Generation: For confirmed bookings (isOnline = true)
+- Storage: `MeetSession` model (meetLink, joinCode, status)
 
-### Low Priority (13 email notifications)
-- SendGrid templates needed
-- See: `docs/core/TODO-TRACKING.md` for complete list
+**Google Maps**:
+- Location Picker: `/src/features/organizations/components/google-maps-location-picker.tsx`
+- Places API: `Location` model (googlePlaceId, formattedAddress, coordinates)
+- Static Maps: `/src/features/organizations/components/static-location-map.tsx`
 
-### Type Safety Status ✅
-- **0 ESLint warnings** (100% compliance achieved Nov 3, 2025)
-- All legitimate 'any' usage covered by documented overrides (.eslintrc.js:166-246)
-- `@typescript-eslint/no-explicit-any` set to 'warn' to prevent future violations
-- Historical migration: 245+ warnings → 0 warnings (Oct-Nov 2025)
+### Email (SendGrid)
+```typescript
+// Implementation: src/lib/communications/email.ts
+// Templates: src/features/communications/lib/email-templates.ts
+
+// Templates:
+// - Email verification
+// - Welcome emails (OAuth vs credentials)
+// - Password reset
+// - Booking confirmations
+// - Provider notifications
+
+// Configuration:
+// - SENDGRID_API_KEY (env var)
+// - SENDGRID_FROM_EMAIL (env var)
+```
+
+### SMS/WhatsApp (Twilio)
+```typescript
+// Implementation: src/features/communications/lib/server-helper.ts
+
+// Use Cases:
+// - Booking confirmations
+// - Appointment reminders
+// - Provider notifications
+
+// Configuration:
+// - TWILIO_ACCOUNT_SID
+// - TWILIO_AUTH_TOKEN
+// - TWILIO_PHONE_NUMBER
+```
+
+### File Storage (Vercel Blob)
+```typescript
+// Package: @vercel/blob
+// Use Cases:
+// - Provider requirement documents (PDF, images)
+// - User profile pictures
+// - Organization logos
+
+// Configuration:
+// - BLOB_READ_WRITE_TOKEN
+```
+
+### Rate Limiting (Upstash Redis)
+```typescript
+// Package: @upstash/ratelimit 2.0.6
+// Implementation: src/lib/rate-limit.ts
+
+// Configuration:
+// - UPSTASH_REDIS_REST_URL
+// - UPSTASH_REDIS_REST_TOKEN
+
+// Limits:
+// - General API: 100 requests/minute
+// - Auth endpoints: 5 requests/15 minutes
+```
+
+### Error Tracking (Sentry)
+```typescript
+// Package: @sentry/nextjs 10.23.0
+// Setup: Serverless-compatible configuration
+
+// Files:
+// - sentry.client.config.ts - Client-side error tracking
+// - sentry.server.config.ts - Server-side error tracking
+// - sentry.edge.config.ts - Edge runtime error tracking
+// - instrumentation.ts - Server-side instrumentation hook
+
+// Integration:
+// - logger.error() → automatically sent to Sentry in production
+// - logger.audit() → sent to Sentry for security monitoring
+// - Sanitized context (no PHI in error reports)
+// - Source maps enabled for production debugging
+```
 
 ---
 
-## 10. Development Workflow
+## 10. Testing & Quality Assurance
+
+### Test Setup (Playwright)
+
+**Test Structure**: `/e2e/tests/`
+
+**Test Categories**:
+1. **Auth** (`/e2e/tests/auth/`)
+   - `login.spec.ts` - Login flows, OAuth, credentials
+
+2. **Booking** (`/e2e/tests/booking/`)
+   - `guest-booking.spec.ts` - Guest booking flow
+   - `concurrent-booking.spec.ts` - Race condition testing
+   - `race-condition.spec.ts` - Double-booking prevention
+
+3. **Calendar** (`/e2e/tests/calendar/`)
+   - `availability-creation.spec.ts` - Availability CRUD
+
+4. **Provider** (`/e2e/tests/provider/`)
+   - `availability.spec.ts` - Provider availability management
+
+5. **Security** (`/e2e/tests/security/`)
+   - `security-headers.spec.ts` - HTTP security headers
+   - `password-complexity.spec.ts` - Password validation
+   - `rate-limiting.spec.ts` - Rate limit enforcement
+
+**Test Configuration**: `playwright.config.ts`
+- Projects: Chromium, Firefox, WebKit
+- Base URL: `http://localhost:3000`
+- Test data setup: `/e2e/utils/setup-test-data.ts`
+
+**Test Scripts** (`package.json`):
+```bash
+npm run test          # Run all tests
+npm run test:headed   # Run with browser UI
+npm run test:ui       # Playwright UI mode
+npm run test:debug    # Debug mode
+npm run test:auth     # Auth tests only
+npm run test:booking  # Booking tests only
+npm run test:provider # Provider tests only
+npm run test:calendar # Calendar tests only
+```
+
+---
+
+## 11. Performance Optimizations
+
+### Database
+- **Pagination**: ALL `findMany()` MUST include `take:` (min 20)
+- **Indexes**: Strategic indexes on high-traffic queries (47/47 queries paginated)
+- **N+1 Prevention**: Eager loading with `include:` and `select:`
+- **Transactions**: Multi-table operations wrapped in `prisma.$transaction()`
+
+### Frontend
+- **Code Splitting**: Route-based (Next.js automatic)
+- **Image Optimization**: Next.js Image component (REQUIRED)
+- **Caching**: React Query (via tRPC) - 5min default staleTime
+- **Lazy Loading**: Dynamic imports for heavy components
+
+### API
+- **Rate Limiting**: Upstash Redis (production-required)
+- **Response Caching**: React Query on client
+- **Debouncing**: Search inputs (500ms default)
+- **Optimistic Updates**: Booking creation, availability acceptance
+
+---
+
+## 12. Development Workflow
 
 ### Commands
 ```bash
@@ -605,7 +778,71 @@ npx tsc --noEmit && npm run build && npm run lint
 
 ---
 
-## 11. Recent Changes Log
+## 13. Environment Variables
+
+### Required (Production)
+```bash
+# Database
+DATABASE_URL="postgresql://..."
+
+# Auth
+NEXTAUTH_URL="https://medbookings.co.za"
+NEXTAUTH_SECRET="<32+ char random string>"
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+
+# Rate Limiting (CRITICAL)
+UPSTASH_REDIS_REST_URL="..."
+UPSTASH_REDIS_REST_TOKEN="..."
+
+# Email
+SENDGRID_API_KEY="..."
+SENDGRID_FROM_EMAIL="noreply@medbookings.co.za"
+
+# SMS/WhatsApp
+TWILIO_ACCOUNT_SID="..."
+TWILIO_AUTH_TOKEN="..."
+TWILIO_PHONE_NUMBER="..."
+
+# Storage
+BLOB_READ_WRITE_TOKEN="..."
+
+# Error Tracking
+SENTRY_AUTH_TOKEN="..."
+NEXT_PUBLIC_SENTRY_DSN="..."
+
+# Admin
+ADMIN_EMAILS="admin@medbookings.co.za"
+```
+
+### Optional
+```bash
+# Development Debugging
+DEBUG_ALL=true           # Enable all debug logs
+DEBUG_FORMS=true         # Form validation
+DEBUG_CALENDAR=true      # Calendar operations
+DEBUG_BOOKINGS=true      # Booking flow
+
+# Sentry (production settings)
+SENTRY_ORG="..."
+SENTRY_PROJECT="..."
+```
+
+---
+
+## 14. Recent Changes Log
+
+### 2025-11-07 (Sentry Integration Complete)
+- **Actions**: Full Sentry error tracking implementation
+- **Changes**:
+  - Implemented serverless-compatible Sentry initialization
+  - Added instrumentation.ts for server-side error tracking
+  - Integrated logger.error() → Sentry automatic reporting
+  - Integrated logger.audit() → Sentry security monitoring
+  - Added Sentry serverless files to compliance exclusions
+  - Cleaned up debug code after successful verification
+  - All error tracking now production-ready with PHI sanitization
+- **Status**: ✅ Complete - Production-ready error monitoring
 
 ### 2025-11-06 (Database Migration Cleanup)
 - **Actions**: Migration naming cleanup and verification
@@ -643,116 +880,39 @@ npx tsc --noEmit && npm run build && npm run lint
 
 ---
 
-## 12. Integration Points
+## 15. Known Issues & TODOs
 
-### Google Calendar Integration
-```typescript
-// CalendarIntegration model stores OAuth tokens
-// Sync operations tracked in CalendarSyncOperation
-// External events → CalendarEvent → block CalculatedAvailabilitySlot[]
+### High Priority
+1. **Stripe Billing Integration** - Subscription payment processing
+   - Status: Models exist, Stripe integration incomplete
+   - Router: Commented out in `src/server/api/root.ts`
+   - Estimated: ~8-12 hours
 
-Sync Types:
-- FULL_SYNC: Complete calendar refresh
-- INCREMENTAL_SYNC: Changes since lastSyncToken
-- WEBHOOK_SYNC: Real-time push notifications
-- MANUAL_SYNC: User-triggered
-```
+2. **Google My Business Sync** - Review synchronization
+   - Status: Review model has `googleReviewId` but sync not implemented
+   - Estimated: ~6-8 hours
 
-### Google Meet Integration
-```typescript
-// Auto-generation when isOnline = true
-// Stored in Booking.meetLink
-// MeetSession model tracks status: SCHEDULED | STARTED | ENDED | CANCELLED
-```
+3. **Organization Logo Upload** - Vercel Blob integration
+   - Files: `features/organizations/components/*/edit-organization-basic-info.tsx`
+   - Estimated: ~2 hours
 
-### Email/SMS/WhatsApp
-```typescript
-// SendGrid: Transactional emails (SENDGRID_API_KEY)
-// Twilio: SMS + WhatsApp (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-// Templates: src/features/communications/lib/email-templates.ts
+4. **Calendar Import/Export** - iCal format support
+   - Files: `app/(dashboard)/calendar/availability/page.tsx:173,184`
+   - Estimated: ~4-6 hours
 
-Communication Preferences:
-- User.reminderChannels: string[] @default(["email", "sms"])
-- CommunicationPreference model: per-user channel settings
-```
+### Password Migration
+- **SHA-256 → bcrypt Migration**: Active 90-day deadline enforcement
+- **Status**: Auto-migration on login, forced reset after deadline
+- **Tracking**: User.passwordMigratedAt, User.passwordMigrationDeadline
 
-### File Storage
-```typescript
-// Vercel Blob Storage (@vercel/blob)
-// Currently used for: Provider profile images
-// Planned: Organization logos, requirement documents
-// Utility: src/lib/storage/blob.ts
-```
+### Type Safety Status
+- **ESLint Warnings**: 0 (100% compliance achieved)
+- **Any Usage**: All legitimate cases documented in `.eslintrc.js:166-246`
+- **Rule**: `@typescript-eslint/no-explicit-any` set to 'warn' to prevent future violations
 
 ---
 
-## 13. Performance Optimizations
-
-### Database
-- **Pagination**: ALL `findMany()` MUST include `take:` (min 20)
-- **Indexes**: Strategic indexes on high-traffic queries (see Schema section)
-- **N+1 Prevention**: Eager loading with `include:` and `select:`
-- **Transactions**: Multi-table operations wrapped in `prisma.$transaction()`
-
-### Frontend
-- **Code Splitting**: Route-based (Next.js automatic)
-- **Image Optimization**: Next.js Image component (REQUIRED)
-- **Caching**: React Query (via tRPC) - 5min default staleTime
-- **Lazy Loading**: Dynamic imports for heavy components
-
-### API
-- **Rate Limiting**: Upstash Redis (production-required)
-- **Response Caching**: React Query on client
-- **Debouncing**: Search inputs (500ms default)
-- **Optimistic Updates**: Booking creation, availability acceptance
-
----
-
-## 14. Environment Variables
-
-### Required (Production)
-```bash
-# Database
-DATABASE_URL="postgresql://..."
-
-# Auth
-NEXTAUTH_URL="https://medbookings.co.za"
-NEXTAUTH_SECRET="<32+ char random string>"
-GOOGLE_CLIENT_ID="..."
-GOOGLE_CLIENT_SECRET="..."
-
-# Rate Limiting (CRITICAL)
-UPSTASH_REDIS_REST_URL="..."
-UPSTASH_REDIS_REST_TOKEN="..."
-
-# Email
-SENDGRID_API_KEY="..."
-SENDGRID_FROM_EMAIL="noreply@medbookings.co.za"
-
-# SMS/WhatsApp
-TWILIO_ACCOUNT_SID="..."
-TWILIO_AUTH_TOKEN="..."
-TWILIO_PHONE_NUMBER="..."
-
-# Storage
-BLOB_READ_WRITE_TOKEN="..."
-
-# Admin
-ADMIN_EMAILS="admin@medbookings.co.za"
-```
-
-### Optional
-```bash
-# Development Debugging
-DEBUG_ALL=true           # Enable all debug logs
-DEBUG_FORMS=true         # Form validation
-DEBUG_CALENDAR=true      # Calendar operations
-DEBUG_BOOKINGS=true      # Booking flow
-```
-
----
-
-## 15. Key Architectural Decisions
+## 16. Key Architectural Decisions
 
 ### Why tRPC?
 - **Type Safety**: End-to-end TypeScript without code generation
@@ -778,14 +938,20 @@ DEBUG_BOOKINGS=true      # Booking flow
 - **Safety**: Prevents `new Date()` bugs (ESLint enforced)
 
 ### Why Compliance System?
-- **Automation**: Catches violations before they reach production
+- **Automation**: Catches violations before production (85% coverage)
 - **Documentation**: CLAUDE.md as enforceable spec
-- **Quality**: 85% automation coverage (see ENFORCEMENT-COVERAGE.md)
+- **Quality**: 22 active enforcement mechanisms
 - **POPIA**: Built-in data protection compliance
+
+### Why Sentry?
+- **Serverless**: Compatible with Vercel's serverless architecture
+- **Integration**: Automatic error capture via logger
+- **PHI Protection**: Sanitized context before sending
+- **Debugging**: Source maps for production error tracking
 
 ---
 
-## 16. Quick Reference
+## 17. Quick Reference
 
 ### Need to...
 
@@ -828,7 +994,7 @@ DEBUG_BOOKINGS=true      # Booking flow
 
 ---
 
-## 17. Contact & Resources
+## 18. Contact & Resources
 
 ### Documentation
 - **Full Specs**: `/docs/INDEX.md` - Complete documentation index
@@ -837,6 +1003,8 @@ DEBUG_BOOKINGS=true      # Booking flow
 - **Database Ops**: `/docs/core/DATABASE-OPERATIONS.md`
 - **Timezone Guide**: `/docs/compliance/TIMEZONE-GUIDELINES.md`
 - **Logging Guide**: `/docs/compliance/LOGGING.md`
+- **Compliance System**: `/docs/compliance/COMPLIANCE-SYSTEM.md`
+- **Enforcement Coverage**: `/docs/compliance/ENFORCEMENT-COVERAGE.md`
 
 ### External Resources
 - Next.js Docs: https://nextjs.org/docs
@@ -844,6 +1012,7 @@ DEBUG_BOOKINGS=true      # Booking flow
 - Prisma Docs: https://www.prisma.io/docs
 - Radix UI: https://www.radix-ui.com/primitives/docs/overview/introduction
 - Tailwind CSS: https://tailwindcss.com/docs
+- Sentry Docs: https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 ---
 
