@@ -832,6 +832,21 @@ SENTRY_PROJECT="..."
 
 ## 14. Recent Changes Log
 
+### 2025-11-07 (Calendar Sync UI Integration)
+- **Actions**: Integrated calendar sync dashboards into provider and organization profile pages
+- **Changes**:
+  - Added `ProviderCalendarSyncDashboard` to provider profile Overview tab (after Availability section)
+  - Added `OrganizationCalendarSyncDashboard` to organization profile (before Locations section, owner-only access)
+  - Created 7 new UI components with real-time sync status (5-second refresh)
+  - Components are self-contained with internal state management and data fetching
+  - Follows existing Card/section patterns for UI consistency
+  - No additional state management required in parent components
+  - Supports manual sync triggers, conflict resolution modals, and sync operation history
+- **Status**: ✅ Complete - Calendar sync dashboards fully integrated and accessible from profile pages
+- **Files Modified**:
+  - `/src/features/providers/components/provider-profile/provider-profile-client.tsx`
+  - `/src/features/organizations/components/profile/organization-profile-view.tsx`
+
 ### 2025-11-07 (Sentry Integration Complete)
 - **Actions**: Full Sentry error tracking implementation
 - **Changes**:

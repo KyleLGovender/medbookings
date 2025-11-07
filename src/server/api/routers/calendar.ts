@@ -1933,6 +1933,144 @@ export const calendarRouter = createTRPCRouter({
         // Don't fail the booking if notifications fail
       }
 
+      // Export booking to Google Calendar (dual export: provider + organization)
+      // Runs asynchronously to avoid blocking booking response
+      void (async () => {
+        try {
+          const provider = booking.slot?.availability?.provider;
+          const organizationId = booking.slot?.availability?.organizationId;
+          const locationId = booking.slot?.availability?.locationId;
+
+          // Export to provider calendar
+          if (provider?.id) {
+            const providerIntegration = await ctx.prisma.calendarIntegration.findUnique({
+              where: { providerId: provider.id },
+            });
+
+            if (
+              providerIntegration &&
+              providerIntegration.syncEnabled &&
+              providerIntegration.syncDirection !== 'IMPORT_ONLY' &&
+              booking.status !== 'CANCELLED'
+            ) {
+              try {
+                const { createGoogleEventFromBooking } = await import('@/lib/google-calendar');
+                const result = await createGoogleEventFromBooking(
+                  booking as any,
+                  providerIntegration.id
+                );
+
+                await ctx.prisma.calendarEvent.create({
+                  data: {
+                    calendarIntegrationId: providerIntegration.id,
+                    externalEventId: result.eventId,
+                    externalCalendarId: providerIntegration.calendarId!,
+                    title: `MedBookings: ${booking.slot?.service?.name || 'Booking'}`,
+                    startTime: booking.slot?.startTime || nowUTC(),
+                    endTime: booking.slot?.endTime || nowUTC(),
+                    isAllDay: false,
+                    blocksAvailability: true,
+                    syncStatus: 'SYNCED',
+                    lastSyncedAt: nowUTC(),
+                  },
+                });
+
+                if (result.meetLink && !booking.meetLink) {
+                  await ctx.prisma.booking.update({
+                    where: { id: booking.id },
+                    data: { meetLink: result.meetLink },
+                  });
+                }
+
+                logger.info('Booking exported to provider Google Calendar', {
+                  bookingId: booking.id,
+                  eventId: result.eventId,
+                  providerId: provider.id,
+                });
+              } catch (providerExportError) {
+                logger.error('Failed to export booking to provider calendar', {
+                  bookingId: booking.id,
+                  providerId: provider.id,
+                  error:
+                    providerExportError instanceof Error
+                      ? providerExportError.message
+                      : String(providerExportError),
+                });
+              }
+            }
+          }
+
+          // Export to organization calendar
+          if (organizationId) {
+            const orgIntegration = await ctx.prisma.organizationCalendarIntegration.findFirst({
+              where: {
+                organizationId,
+                locationId: locationId || null,
+              },
+            });
+
+            if (
+              orgIntegration &&
+              orgIntegration.syncEnabled &&
+              orgIntegration.syncDirection !== 'IMPORT_ONLY' &&
+              booking.status !== 'CANCELLED'
+            ) {
+              try {
+                const { createGoogleEventFromBooking } = await import('@/lib/google-calendar');
+                const result = await createGoogleEventFromBooking(
+                  booking as any,
+                  orgIntegration.id
+                );
+
+                await ctx.prisma.organizationCalendarEvent.create({
+                  data: {
+                    organizationCalendarIntegrationId: orgIntegration.id,
+                    externalEventId: result.eventId,
+                    externalCalendarId: orgIntegration.calendarId!,
+                    title: `MedBookings: ${booking.slot?.service?.name || 'Booking'}`,
+                    startTime: booking.slot?.startTime || nowUTC(),
+                    endTime: booking.slot?.endTime || nowUTC(),
+                    isAllDay: false,
+                    blocksAvailability: true,
+                    syncStatus: 'SYNCED',
+                    lastSyncedAt: nowUTC(),
+                  },
+                });
+
+                if (result.meetLink && !booking.meetLink) {
+                  await ctx.prisma.booking.update({
+                    where: { id: booking.id },
+                    data: { meetLink: result.meetLink },
+                  });
+                }
+
+                logger.info('Booking exported to organization Google Calendar', {
+                  bookingId: booking.id,
+                  eventId: result.eventId,
+                  organizationId,
+                  locationId,
+                });
+              } catch (orgExportError) {
+                logger.error('Failed to export booking to organization calendar', {
+                  bookingId: booking.id,
+                  organizationId,
+                  locationId,
+                  error:
+                    orgExportError instanceof Error
+                      ? orgExportError.message
+                      : String(orgExportError),
+                });
+              }
+            }
+          }
+        } catch (error) {
+          logger.error('Error during dual calendar export', {
+            bookingId: booking.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      })();
+
       return {
         success: true,
         booking,

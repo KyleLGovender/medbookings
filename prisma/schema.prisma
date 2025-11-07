@@ -154,15 +154,16 @@ model Organization {
   trialStatus         TrialStatus?
   paymentMethodAdded  Boolean                          @default(false)
   trialReminderSent   Boolean                          @default(false)
-  trialConversionDate DateTime?
-  availabilities      Availability[]
-  locations           Location[]
-  approvedBy          User?                            @relation("OrganizationApprovals", fields: [approvedById], references: [id])
-  invitations         OrganizationInvitation[]
-  memberships         OrganizationMembership[]
-  providerConnections OrganizationProviderConnection[]
-  providerInvitations ProviderInvitation[]
-  subscriptions       Subscription[]
+  trialConversionDate   DateTime?
+  availabilities        Availability[]
+  locations             Location[]
+  approvedBy            User?                                @relation("OrganizationApprovals", fields: [approvedById], references: [id])
+  invitations           OrganizationInvitation[]
+  memberships           OrganizationMembership[]
+  providerConnections   OrganizationProviderConnection[]
+  providerInvitations   ProviderInvitation[]
+  subscriptions         Subscription[]
+  calendarIntegrations  OrganizationCalendarIntegration[]
 
   @@index([name])
   @@index([status]) // For admin filtering by approval status
@@ -277,9 +278,10 @@ model Location {
   updatedAt             DateTime                    @updatedAt
   searchTerms           String[]
   availabilities        Availability[]
-  organization          Organization                @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization          Organization                        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   serviceConfigurations ServiceAvailabilityConfig[]
   subscriptions         Subscription[]
+  calendarIntegrations  OrganizationCalendarIntegration[]
 
   @@index([organizationId])
   @@index([searchTerms])
@@ -536,18 +538,20 @@ model CalculatedAvailabilitySlot {
   startTime              DateTime
   endTime                DateTime
   status                 SlotStatus                @default(AVAILABLE)
-  lastCalculated         DateTime
-  billedToSubscriptionId String?
-  blockedByEventId       String?
-  version                Int                       @default(1)
-  createdAt              DateTime                  @default(now())
-  updatedAt              DateTime                  @updatedAt
-  booking                Booking?
-  availability           Availability              @relation(fields: [availabilityId], references: [id])
-  billedToSubscription   Subscription?             @relation("BilledSlots", fields: [billedToSubscriptionId], references: [id])
-  blockedByCalendarEvent CalendarEvent?            @relation("BlockedByCalendarEvent", fields: [blockedByEventId], references: [id])
-  serviceConfig          ServiceAvailabilityConfig @relation(fields: [serviceConfigId], references: [id])
-  service                Service                   @relation(fields: [serviceId], references: [id])
+  lastCalculated               DateTime
+  billedToSubscriptionId       String?
+  blockedByEventId             String?
+  blockedByOrgEventId          String?
+  version                      Int                              @default(1)
+  createdAt                    DateTime                         @default(now())
+  updatedAt                    DateTime                         @updatedAt
+  booking                      Booking?
+  availability                 Availability                     @relation(fields: [availabilityId], references: [id])
+  billedToSubscription         Subscription?                    @relation("BilledSlots", fields: [billedToSubscriptionId], references: [id])
+  blockedByCalendarEvent       CalendarEvent?                   @relation("BlockedByCalendarEvent", fields: [blockedByEventId], references: [id])
+  blockedByOrgCalendarEvent    OrganizationCalendarEvent?       @relation("BlockedByOrgCalendarEvent", fields: [blockedByOrgEventId], references: [id])
+  serviceConfig                ServiceAvailabilityConfig        @relation(fields: [serviceConfigId], references: [id])
+  service                      Service                          @relation(fields: [serviceId], references: [id])
 
   @@index([availabilityId, serviceId, startTime, status])
   @@index([startTime, status, serviceId])
@@ -648,6 +652,8 @@ model CalendarIntegration {
   syncIntervalMinutes   Int                     @default(15)
   lastFullSyncAt        DateTime?
   syncFailureCount      Int                     @default(0)
+  nextRetryAt           DateTime?
+  lastErrorType         String?
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
   calendarProvider      String
@@ -655,6 +661,105 @@ model CalendarIntegration {
   calendarEvents        CalendarEvent[]
   provider              Provider                @relation(fields: [providerId], references: [id])
   syncOperations        CalendarSyncOperation[]
+}
+
+model OrganizationCalendarIntegration {
+  id                    String                              @id @default(cuid())
+  accessToken           String
+  refreshToken          String
+  expiresAt             DateTime
+  calendarId            String?
+  syncEnabled           Boolean                             @default(true)
+  lastSyncedAt          DateTime?
+  googleEmail           String?
+  grantedScopes         String[]
+  meetSettings          Json?
+  webhookChannelId      String?
+  webhookResourceId     String?
+  webhookExpiresAt      DateTime?
+  nextSyncToken         String?
+  syncDirection         CalendarSyncDirection               @default(BIDIRECTIONAL)
+  blockingEventTypes    String[]
+  autoCreateMeetLinks   Boolean                             @default(true)
+  backgroundSyncEnabled Boolean                             @default(true)
+  syncIntervalMinutes   Int                                 @default(15)
+  lastFullSyncAt        DateTime?
+  syncFailureCount      Int                                 @default(0)
+  nextRetryAt           DateTime?
+  lastErrorType         String?
+  createdAt             DateTime                            @default(now())
+  updatedAt             DateTime                            @updatedAt
+  calendarProvider      String
+  organizationId        String
+  locationId            String?
+  calendarEvents        OrganizationCalendarEvent[]
+  location              Location?                           @relation(fields: [locationId], references: [id])
+  organization          Organization                        @relation(fields: [organizationId], references: [id])
+  syncOperations        OrganizationCalendarSyncOperation[]
+
+  @@unique([organizationId, locationId])
+  @@index([organizationId])
+  @@index([locationId])
+  @@index([syncEnabled, backgroundSyncEnabled])
+  @@index([lastSyncedAt])
+}
+
+model OrganizationCalendarEvent {
+  id                                String                             @id @default(cuid())
+  organizationCalendarIntegrationId String
+  externalEventId                   String
+  externalCalendarId                String
+  etag                              String?
+  title                             String
+  startTime                         DateTime
+  endTime                           DateTime
+  isAllDay                          Boolean                            @default(false)
+  lastSyncedAt                      DateTime                           @default(now())
+  eventType                         String?
+  blocksAvailability                Boolean                            @default(true)
+  syncStatus                        CalendarEventSyncStatus            @default(SYNCED)
+  lastModifiedInExternal            DateTime?
+  hasConflict                       Boolean                            @default(false)
+  conflictDetails                   String?
+  conflictResolvedAt                DateTime?
+  version                           Int                                @default(1)
+  createdAt                         DateTime                           @default(now())
+  updatedAt                         DateTime                           @updatedAt
+  blockedSlots                      CalculatedAvailabilitySlot[]       @relation("BlockedByOrgCalendarEvent")
+  organizationCalendarIntegration   OrganizationCalendarIntegration    @relation(fields: [organizationCalendarIntegrationId], references: [id])
+
+  @@unique([organizationCalendarIntegrationId, externalEventId])
+  @@index([organizationCalendarIntegrationId, startTime, endTime])
+  @@index([syncStatus, hasConflict])
+  @@index([lastSyncedAt])
+}
+
+model OrganizationCalendarSyncOperation {
+  id                                String                             @id @default(cuid())
+  organizationCalendarIntegrationId String
+  operationType                     CalendarSyncOperationType
+  sourceSystem                      CalendarSyncSource
+  status                            CalendarSyncStatus                 @default(PENDING)
+  entityType                        CalendarEntityType
+  entityId                          String?
+  externalEventId                   String?
+  startedAt                         DateTime                           @default(now())
+  completedAt                       DateTime?
+  retryCount                        Int                                @default(0)
+  maxRetries                        Int                                @default(3)
+  errorMessage                      String?
+  conflictResolution                ConflictResolution?
+  syncWindowStart                   DateTime?
+  syncWindowEnd                     DateTime?
+  eventsProcessed                   Int                                @default(0)
+  eventsSucceeded                   Int                                @default(0)
+  eventsFailed                      Int                                @default(0)
+  createdAt                         DateTime                           @default(now())
+  updatedAt                         DateTime                           @updatedAt
+  organizationCalendarIntegration   OrganizationCalendarIntegration    @relation(fields: [organizationCalendarIntegrationId], references: [id])
+
+  @@index([organizationCalendarIntegrationId, status])
+  @@index([operationType, startedAt])
 }
 
 model CalendarEvent {

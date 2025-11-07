@@ -155,7 +155,37 @@ npx prisma migrate dev
 
 # Generate Prisma client
 npx prisma generate
+
+# (Optional) Seed calendar sync test data
+npx tsx scripts/seed-calendar-sync-test-data.ts
+# Creates test providers, organizations, calendar integrations
+# See: /docs/testing/CALENDAR-SYNC-BROWSER-TESTING-GUIDE.md for details
 ```
+
+**Test Data Seeding (Optional):**
+
+If you're working on calendar sync features, run the calendar sync seed script:
+
+```bash
+npx tsx scripts/seed-calendar-sync-test-data.ts
+```
+
+**What it creates:**
+- 4 test users (providers, organization owner/staff)
+- 2 test providers (1 with calendar connected, 1 without)
+- 1 test organization with 3 locations
+- 4 calendar integrations with realistic OAuth tokens
+- 40 calendar events (past and future)
+- 200 calendar sync operations (various statuses)
+- Availability slots with some blocked by calendar events
+
+**Test accounts:**
+- Provider A (Connected): `test-provider-connected@medbookings.test`
+- Provider B (No Calendar): `test-provider-no-calendar@medbookings.test`
+- Organization Owner: `test-org-owner@medbookings.test`
+- Organization Staff: `test-org-staff@medbookings.test`
+
+**Note:** This script is idempotent (can run multiple times safely).
 
 ### Step 4: Verify Setup
 
@@ -177,11 +207,17 @@ npm run dev
 
 ### Google OAuth Setup
 
+> 📘 **Complete OAuth Setup Guide**: See [GOOGLE-CLOUD-OAUTH-SETUP.md](./GOOGLE-CLOUD-OAUTH-SETUP.md) for comprehensive step-by-step instructions including Calendar API integration.
+
+**Quick Setup (for existing OAuth credentials):**
+
 1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
 2. Create or select a project
 3. Create OAuth 2.0 Client ID
 4. Add authorized redirect URIs:
    - `http://localhost:3000/api/auth/callback/google`
+   - `http://localhost:3000/api/auth/google/calendar/callback` (for Calendar integration)
+   - `http://localhost:3000/api/auth/google/organization-calendar/callback` (for Organization Calendar)
    - `https://medbookings.co.za/api/auth/callback/google`
 5. Copy Client ID and Client Secret to `.env.local`
 
