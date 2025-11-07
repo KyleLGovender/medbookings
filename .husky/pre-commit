@@ -73,7 +73,8 @@ for FILE in $STAGED_FILES; do
      [[ "$FILE" =~ ^\.claude/WORKFLOW\.md$ ]] || \
      [[ "$FILE" =~ ^eslint-rules/ ]] || \
      [[ "$FILE" == "src/lib/logger.ts" ]] || \
-     [[ "$FILE" == "src/lib/debug.ts" ]]; then
+     [[ "$FILE" == "src/lib/debug.ts" ]] || \
+     [[ "$FILE" == "src/lib/sentry-server.ts" ]]; then
     echo "Skipping (infrastructure file): $FILE"
     continue
   fi
