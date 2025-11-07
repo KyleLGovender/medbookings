@@ -1951,12 +1951,14 @@ export const calendarRouter = createTRPCRouter({
               providerIntegration &&
               providerIntegration.syncEnabled &&
               providerIntegration.syncDirection !== 'IMPORT_ONLY' &&
-              booking.status !== 'CANCELLED'
+              booking.status !== 'CANCELLED' &&
+              booking.slot // Type safety: Ensure slot exists before exporting to calendar
             ) {
               try {
                 const { createGoogleEventFromBooking } = await import('@/lib/google-calendar');
+                // Type-safe: booking.slot guaranteed non-null by condition above
                 const result = await createGoogleEventFromBooking(
-                  booking as any,
+                  booking as typeof booking & { slot: NonNullable<typeof booking.slot> },
                   providerIntegration.id
                 );
 
@@ -2013,12 +2015,14 @@ export const calendarRouter = createTRPCRouter({
               orgIntegration &&
               orgIntegration.syncEnabled &&
               orgIntegration.syncDirection !== 'IMPORT_ONLY' &&
-              booking.status !== 'CANCELLED'
+              booking.status !== 'CANCELLED' &&
+              booking.slot // Type safety: Ensure slot exists before exporting to calendar
             ) {
               try {
                 const { createGoogleEventFromBooking } = await import('@/lib/google-calendar');
+                // Type-safe: booking.slot guaranteed non-null by condition above
                 const result = await createGoogleEventFromBooking(
-                  booking as any,
+                  booking as typeof booking & { slot: NonNullable<typeof booking.slot> },
                   orgIntegration.id
                 );
 

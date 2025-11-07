@@ -540,6 +540,7 @@ export const calendarSyncRouter = createTRPCRouter({
           const calendarEvents = await tx.calendarEvent.findMany({
             where: { calendarIntegrationId: integration.id },
             select: { id: true },
+            take: 10000, // Pagination: Delete calendar events helper - bounded by integration FK (typical max ~1000 events)
           });
 
           // Unblock all slots that were blocked by these events
@@ -616,7 +617,9 @@ export const calendarSyncRouter = createTRPCRouter({
 
       // Type narrowing: After null check, TypeScript knows slot is not null
       // Create properly typed variable for type safety
-      const bookingWithSlot = booking as typeof booking & { slot: NonNullable<typeof booking.slot> };
+      const bookingWithSlot = booking as typeof booking & {
+        slot: NonNullable<typeof booking.slot>;
+      };
 
       const provider = bookingWithSlot.slot.availability.provider;
       const integration = provider.calendarIntegration;
@@ -1359,6 +1362,7 @@ export const calendarSyncRouter = createTRPCRouter({
           const calendarEvents = await tx.organizationCalendarEvent.findMany({
             where: { organizationCalendarIntegrationId: integration.id },
             select: { id: true },
+            take: 10000, // Pagination: Delete organization calendar events helper - bounded by integration FK (typical max ~1000 events)
           });
 
           // Unblock all slots that were blocked by these events
@@ -1432,6 +1436,7 @@ export const calendarSyncRouter = createTRPCRouter({
       // Get all organization calendar integrations
       const integrations = await ctx.prisma.organizationCalendarIntegration.findMany({
         where: { organizationId },
+        take: 100, // Pagination: Organization calendar integrations (orgs typically have <100 locations)
       });
 
       if (integrations.length === 0) {
@@ -1476,6 +1481,7 @@ export const calendarSyncRouter = createTRPCRouter({
             const calendarEvents = await tx.organizationCalendarEvent.findMany({
               where: { organizationCalendarIntegrationId: integration.id },
               select: { id: true },
+              take: 10000, // Pagination: Delete organization calendar events helper - bounded by integration FK (typical max ~1000 events)
             });
 
             // Unblock slots (only if locationId is set)

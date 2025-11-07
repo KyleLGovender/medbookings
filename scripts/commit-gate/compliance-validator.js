@@ -861,22 +861,89 @@ class CodeValidator {
   // -------------------------------------------------------------------------
   validateUnboundedQueries(filePath, fullContent) {
     if (filePath.includes('/routers/')) {
-      const findManyMatches = fullContent.match(/\.findMany\(\{[^}]*\}\)/gs);
-      if (findManyMatches) {
-        findManyMatches.forEach(match => {
-          if (!/take:/.test(match)) {
-            this.violations.push({
-              severity: 'ERROR',
-              rule: 'UNBOUNDED_QUERY',
-              file: filePath,
-              message: 'findMany() must have take: limit for pagination',
-              fix: 'Add take: input.take || 50 to prevent unbounded queries',
-              reference: 'CLAUDE.md Section 9: Performance Requirements',
-            });
+      // Enhanced: Use balanced bracket matching instead of regex
+      // to properly handle nested braces in where clauses, etc.
+      const findManyMatches = this.extractFindManyCalls(fullContent);
+
+      findManyMatches.forEach(match => {
+        if (!/take:/.test(match.text)) {
+          this.violations.push({
+            severity: 'ERROR',
+            rule: 'UNBOUNDED_QUERY',
+            file: filePath,
+            line: match.line,
+            message: 'findMany() must have take: limit for pagination',
+            fix: 'Add take: input.take || 50 to prevent unbounded queries',
+            reference: 'CLAUDE.md Section 9: Performance Requirements',
+          });
+        }
+      });
+    }
+  }
+
+  /**
+   * Extract all findMany() calls using balanced bracket matching
+   * Handles nested braces properly (e.g., where: { id: 1 })
+   * @param {string} content - File content
+   * @returns {Array<{text: string, line: number}>} Array of findMany call objects
+   */
+  extractFindManyCalls(content) {
+    const results = [];
+    const lines = content.split('\n');
+
+    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+      const line = lines[lineIdx];
+      const findManyIndex = line.indexOf('.findMany(');
+
+      if (findManyIndex === -1) continue;
+
+      // Start from the opening parenthesis after findMany
+      let depth = 0;
+      let startLine = lineIdx;
+      let startCol = findManyIndex + '.findMany('.length;
+      let queryText = '';
+      let foundStart = false;
+
+      // Scan forward to find the matching closing parenthesis
+      for (let i = lineIdx; i < lines.length; i++) {
+        const currentLine = lines[i];
+        const startIdx = (i === lineIdx) ? startCol : 0;
+
+        for (let j = startIdx; j < currentLine.length; j++) {
+          const char = currentLine[j];
+          queryText += char;
+
+          if (char === '(' || char === '{' || char === '[') {
+            depth++;
+            foundStart = true;
+          } else if (char === ')' || char === '}' || char === ']') {
+            depth--;
+
+            // Found the matching closing parenthesis
+            if (depth === 0 && foundStart && char === ')') {
+              results.push({
+                text: queryText,
+                line: startLine + 1, // 1-indexed for display
+              });
+
+              // Move past this match to avoid duplicates
+              lineIdx = i;
+              break;
+            }
           }
-        });
+        }
+
+        // If we found the end, break outer loop
+        if (depth === 0 && foundStart) break;
+
+        // Add newline for multi-line queries
+        if (i < lines.length - 1) {
+          queryText += '\n';
+        }
       }
     }
+
+    return results;
   }
 
   // -------------------------------------------------------------------------
