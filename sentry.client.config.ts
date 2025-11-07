@@ -28,8 +28,7 @@ if (SENTRY_DSN) {
     tracesSampleRate: SENTRY_ENVIRONMENT === 'production' ? 0.1 : 1.0,
 
     // Setting this option to true will print useful information to the console while you're setting up Sentry.
-    // TEMPORARILY ENABLED: Debugging why errors aren't being captured
-    debug: true,
+    debug: process.env.SENTRY_DEBUG === 'true',
 
     // Capture 100% of transactions for performance monitoring (disabled on free tier to conserve quota)
     // replaysOnErrorSampleRate: 0.0,

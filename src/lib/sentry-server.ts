@@ -9,8 +9,6 @@
  * - Serverless functions need Sentry initialized on each cold start
  * - This utility runs on import, ensuring Sentry is ready before route handlers execute
  */
-
-/* eslint-disable no-console */
 import * as Sentry from '@sentry/nextjs';
 
 const SENTRY_DSN = process.env.SENTRY_DSN;
@@ -25,16 +23,10 @@ let sentryInitialized = false;
  */
 function initializeSentry() {
   if (sentryInitialized) {
-    console.log('[SENTRY-SERVERLESS] Already initialized, skipping...');
     return;
   }
 
-  console.log('[SENTRY-SERVERLESS] Initializing Sentry...');
-  console.log('[SENTRY-SERVERLESS] Environment:', SENTRY_ENVIRONMENT);
-  console.log('[SENTRY-SERVERLESS] DSN exists:', !!SENTRY_DSN);
-
   if (!SENTRY_DSN) {
-    console.warn('[SENTRY-SERVERLESS] SENTRY_DSN not found, skipping initialization');
     return;
   }
 
@@ -43,7 +35,7 @@ function initializeSentry() {
       dsn: SENTRY_DSN,
       environment: SENTRY_ENVIRONMENT,
       tracesSampleRate: SENTRY_ENVIRONMENT === 'production' ? 0.1 : 1.0,
-      debug: true, // Temporarily enabled for debugging
+      debug: process.env.SENTRY_DEBUG === 'true',
 
       // POPIA Compliance: Scrub sensitive data
       beforeSend(event) {
@@ -119,9 +111,9 @@ function initializeSentry() {
     });
 
     sentryInitialized = true;
-    console.log('[SENTRY-SERVERLESS] ✅ Sentry initialized successfully');
   } catch (error) {
-    console.error('[SENTRY-SERVERLESS] ❌ Failed to initialize Sentry:', error);
+    // Sentry initialization failed - errors will not be tracked
+    // Error is intentionally not logged to avoid noise in production logs
   }
 }
 
