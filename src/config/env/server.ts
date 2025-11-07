@@ -30,6 +30,9 @@ const env = createEnv({
     ADMIN_EMAILS: z.string().optional(),
     ADMIN_NOTIFICATION_EMAIL: z.string().email().optional(),
 
+    // OPTIONAL - Cron job authentication
+    CRON_SECRET: z.string().optional(),
+
     // OPTIONAL - Deployment configuration
     PORT: z.string().optional(),
     VERCEL_URL: z.string().optional(),

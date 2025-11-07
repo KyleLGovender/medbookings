@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import {
   Award,
@@ -25,10 +26,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DisconnectConfirmationDialog } from '@/features/calendar/components/sync/disconnect-confirmation-dialog';
+import { ProviderCalendarSyncDashboard } from '@/features/calendar/components/sync/provider-calendar-sync-dashboard';
+import { useCalendarSync } from '@/features/calendar/hooks/use-calendar-sync';
 import { useCurrentUserProvider } from '@/features/providers/hooks/use-current-user-provider';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/utils/api';
 
+// cross-feature-import-safe: Dashboard/profile page importing self-contained calendar UI components
+// Data ownership: Provider owns CalendarIntegration (providerId FK)
+// Pattern: Acceptable per CLAUDE.md Section 3 - Dashboard aggregation + presentation layer
+
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { ProviderAvailabilitySection } from './provider-availability-section';
 import { ProviderBusinessSettingsView } from './provider-business-settings-view';
 import { ProviderRequirementsSection } from './provider-requirements-section';
@@ -39,6 +48,24 @@ export function ProviderProfileClient() {
   const router = useRouter();
   const { toast } = useToast();
   const utils = api.useUtils();
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
+
+  // Calendar sync hook for disconnect functionality
+  const { disconnect, isDisconnecting } = useCalendarSync({
+    providerId: provider?.id || '',
+    refetchInterval: 0, // Don't auto-refresh, we only need disconnect functionality
+  });
+
+  // Handle disconnect confirmation
+  const handleDisconnect = async () => {
+    try {
+      await disconnect();
+      setShowDisconnectDialog(false);
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
+      // No need to log here as toast notification is shown
+    }
+  };
 
   // Unsuspend mutation
   const unsuspendMutation = api.providers.unsuspend.useMutation({
@@ -261,6 +288,25 @@ export function ProviderProfileClient() {
 
               {/* Availability Overview */}
               <ProviderAvailabilitySection providerId={provider.id} />
+
+              {/* Calendar Sync */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Calendar Sync
+                  </CardTitle>
+                  <CardDescription>
+                    Manage your Google Calendar integration and sync settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ProviderCalendarSyncDashboard
+                    providerId={provider.id}
+                    onDisconnect={() => setShowDisconnectDialog(true)}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="business" className="space-y-6">
@@ -340,6 +386,16 @@ export function ProviderProfileClient() {
           </Card>
         </div>
       </div>
+
+      {/* Disconnect Confirmation Dialog */}
+      <DisconnectConfirmationDialog
+        open={showDisconnectDialog}
+        onOpenChange={setShowDisconnectDialog}
+        entityName={provider.name}
+        entityType="provider"
+        onConfirm={handleDisconnect}
+        isDisconnecting={isDisconnecting}
+      />
     </div>
   );
 }

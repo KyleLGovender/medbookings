@@ -3,6 +3,7 @@ import { createTRPCRouter } from '@/server/trpc';
 import { adminRouter } from './routers/admin';
 import { authRouter } from './routers/auth';
 import { calendarRouter } from './routers/calendar';
+import { calendarSyncRouter } from './routers/calendar-sync';
 import { communicationsRouter } from './routers/communications';
 import { debugRouter } from './routers/debug';
 import { organizationsRouter } from './routers/organizations';
@@ -20,6 +21,7 @@ export const appRouter = createTRPCRouter({
   auth: authRouter,
   // billing: billingRouter,
   calendar: calendarRouter,
+  calendarSync: calendarSyncRouter,
   communications: communicationsRouter,
   debug: debugRouter,
   organizations: organizationsRouter,
