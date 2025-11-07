@@ -75,6 +75,7 @@ export async function GET(req: NextRequest) {
     const calendarId = calendarList.data.items?.[0]?.id;
 
     if (!googleEmail || !calendarId) {
+      // phi-safe: logging boolean flags, not actual email data
       logger.error('Failed to retrieve Google email or calendar ID', {
         hasEmail: !!googleEmail,
         hasCalendarId: !!calendarId,

@@ -355,6 +355,7 @@ export async function GET(req: NextRequest) {
               lastError: errorMessage,
             });
           } else {
+            // phi-safe: logging providerId only, not actual email
             logger.warn('Cannot send disabled notification - provider email not found', {
               providerId: integration.providerId,
             });

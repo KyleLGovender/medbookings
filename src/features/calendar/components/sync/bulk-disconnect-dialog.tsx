@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { AlertTriangle, Loader2, MapPin } from 'lucide-react';
 
@@ -99,24 +99,30 @@ export function BulkDisconnectDialog({
   const [inputValue, setInputValue] = useState('');
 
   // Reset input when dialog closes
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      setInputValue('');
-    }
-    onOpenChange(newOpen);
-  };
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      if (!newOpen) {
+        setInputValue('');
+      }
+      onOpenChange(newOpen);
+    },
+    [onOpenChange]
+  );
 
   // Check if input matches organization name (case-insensitive, trimmed)
-  const isMatch = inputValue.trim().toLowerCase() === organizationName.trim().toLowerCase();
+  const isMatch = useMemo(
+    () => inputValue.trim().toLowerCase() === organizationName.trim().toLowerCase(),
+    [inputValue, organizationName]
+  );
 
-  const handleConfirm = async () => {
+  const handleConfirm = useCallback(async () => {
     if (!isMatch || isDisconnecting) {
       return;
     }
 
     await onConfirm();
     // Dialog will close via onOpenChange from parent after successful disconnect
-  };
+  }, [isMatch, isDisconnecting, onConfirm]);
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>

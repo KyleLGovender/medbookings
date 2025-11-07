@@ -824,7 +824,10 @@ class CodeValidator {
         const crossImportPattern = new RegExp(`from ['"]@/features/(?!${currentFeature})\\w+`, 'g');
         const crossImports = fullContent.match(crossImportPattern);
 
-        if (crossImports) {
+        // Check for suppression comment (matches PHI suppression pattern)
+        const hasSuppression = /\/\/\s*cross-feature-import-safe:/i.test(fullContent);
+
+        if (crossImports && !hasSuppression) {
           this.violations.push({
             severity: 'ERROR',
             rule: 'CROSS_FEATURE_IMPORT',

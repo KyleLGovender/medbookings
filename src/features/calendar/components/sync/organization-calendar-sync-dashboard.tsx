@@ -1,5 +1,7 @@
 'use client';
 
+import { useCallback } from 'react';
+
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -74,6 +76,13 @@ export function OrganizationCalendarSyncDashboard({
     locationId: selectedLocationId,
   });
 
+  const handleLocationChange = useCallback(
+    (value: string) => {
+      onLocationChange?.(value === 'all' ? undefined : value);
+    },
+    [onLocationChange]
+  );
+
   return (
     <div className="space-y-6">
       {/* Header with Location Selector */}
@@ -86,10 +95,7 @@ export function OrganizationCalendarSyncDashboard({
         </div>
         {integrated && (
           <div className="flex items-center gap-3">
-            <Select
-              value={selectedLocationId || 'all'}
-              onValueChange={(value) => onLocationChange?.(value === 'all' ? undefined : value)}
-            >
+            <Select value={selectedLocationId || 'all'} onValueChange={handleLocationChange}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>

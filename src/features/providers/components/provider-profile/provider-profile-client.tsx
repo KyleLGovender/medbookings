@@ -36,8 +36,8 @@ import { api } from '@/utils/api';
 // cross-feature-import-safe: Dashboard/profile page importing self-contained calendar UI components
 // Data ownership: Provider owns CalendarIntegration (providerId FK)
 // Pattern: Acceptable per CLAUDE.md Section 3 - Dashboard aggregation + presentation layer
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { ProviderAvailabilitySection } from './provider-availability-section';
 import { ProviderBusinessSettingsView } from './provider-business-settings-view';
 import { ProviderRequirementsSection } from './provider-requirements-section';

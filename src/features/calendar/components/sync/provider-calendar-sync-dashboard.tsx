@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { format, formatDistanceToNow } from 'date-fns';
 import { AlertCircle, Calendar, CheckCircle2, Clock, RefreshCw, XCircle } from 'lucide-react';
@@ -60,6 +60,42 @@ export function ProviderCalendarSyncDashboard({
   const { status, integrated, integration, recentOperations, isLoading, isSyncing, refetch } =
     useCalendarSync({ providerId, refetchInterval: 5000 });
 
+  // Calculate sync statistics - must be at top level before any returns
+  const syncStats = useMemo(() => {
+    const totalOperations = recentOperations.length;
+    const successfulOperations = recentOperations.filter((op) => op.status === 'SUCCESS').length;
+    const failedOperations = recentOperations.filter((op) => op.status === 'FAILED').length;
+    const successRate =
+      totalOperations > 0 ? Math.round((successfulOperations / totalOperations) * 100) : 0;
+
+    return { totalOperations, successfulOperations, failedOperations, successRate };
+  }, [recentOperations]);
+
+  const getOperationStatusBadge = useCallback((status: string) => {
+    const variants = {
+      PENDING: { variant: 'secondary' as const, icon: Clock, label: 'Pending' },
+      IN_PROGRESS: { variant: 'default' as const, icon: RefreshCw, label: 'In Progress' },
+      SUCCESS: { variant: 'outline' as const, icon: CheckCircle2, label: 'Success' },
+      FAILED: { variant: 'destructive' as const, icon: XCircle, label: 'Failed' },
+      CONFLICT_DETECTED: { variant: 'destructive' as const, icon: AlertCircle, label: 'Conflict' },
+      SKIPPED: { variant: 'secondary' as const, icon: XCircle, label: 'Skipped' },
+    };
+
+    const config = variants[status as keyof typeof variants] || variants.PENDING;
+    const Icon = config.icon;
+
+    return (
+      <Badge variant={config.variant} className="flex w-fit items-center gap-1">
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </Badge>
+    );
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -101,34 +137,6 @@ export function ProviderCalendarSyncDashboard({
     );
   }
 
-  // Calculate sync statistics
-  const totalOperations = recentOperations.length;
-  const successfulOperations = recentOperations.filter((op) => op.status === 'SUCCESS').length;
-  const failedOperations = recentOperations.filter((op) => op.status === 'FAILED').length;
-  const successRate =
-    totalOperations > 0 ? Math.round((successfulOperations / totalOperations) * 100) : 0;
-
-  const getOperationStatusBadge = (status: string) => {
-    const variants = {
-      PENDING: { variant: 'secondary' as const, icon: Clock, label: 'Pending' },
-      IN_PROGRESS: { variant: 'default' as const, icon: RefreshCw, label: 'In Progress' },
-      SUCCESS: { variant: 'outline' as const, icon: CheckCircle2, label: 'Success' },
-      FAILED: { variant: 'destructive' as const, icon: XCircle, label: 'Failed' },
-      CONFLICT_DETECTED: { variant: 'destructive' as const, icon: AlertCircle, label: 'Conflict' },
-      SKIPPED: { variant: 'secondary' as const, icon: XCircle, label: 'Skipped' },
-    };
-
-    const config = variants[status as keyof typeof variants] || variants.PENDING;
-    const Icon = config.icon;
-
-    return (
-      <Badge variant={config.variant} className="flex w-fit items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {config.label}
-      </Badge>
-    );
-  };
-
   return (
     <div className="space-y-6">
       {/* Header with Sync Button */}
@@ -169,7 +177,7 @@ export function ProviderCalendarSyncDashboard({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalOperations}</div>
+            <div className="text-2xl font-bold">{syncStats.totalOperations}</div>
             <p className="text-xs text-muted-foreground">Recent sync operations</p>
           </CardContent>
         </Card>
@@ -181,9 +189,9 @@ export function ProviderCalendarSyncDashboard({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{successRate}%</div>
+            <div className="text-2xl font-bold">{syncStats.successRate}%</div>
             <p className="text-xs text-muted-foreground">
-              {successfulOperations}/{totalOperations} successful
+              {syncStats.successfulOperations}/{syncStats.totalOperations} successful
             </p>
           </CardContent>
         </Card>
@@ -221,7 +229,7 @@ export function ProviderCalendarSyncDashboard({
               <CardTitle>Recent Sync Operations</CardTitle>
               <CardDescription>Latest calendar synchronization activity</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isSyncing}>
+            <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isSyncing}>
               <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
             </Button>
           </div>

@@ -1,5 +1,7 @@
 'use client';
 
+import { useCallback } from 'react';
+
 import { formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, CheckCircle2, User, XCircle } from 'lucide-react';
 
@@ -43,6 +45,41 @@ export function CalendarIntegrationSettings({
 }: CalendarIntegrationSettingsProps) {
   const { integrated, integration, isLoading } = useCalendarSync({ providerId });
 
+  // Extract initials for avatar fallback - must be at top level before any returns
+  const getInitials = useCallback((email: string) => {
+    const parts = email.split('@')[0]?.split('.');
+    if (!parts || parts.length === 0) return email.substring(0, 2).toUpperCase();
+    if (parts.length === 1) return parts[0]!.substring(0, 2).toUpperCase();
+    return (parts[0]![0] + parts[1]![0]).toUpperCase();
+  }, []);
+
+  const syncStatusBadge = useCallback(() => {
+    if (!integration?.syncEnabled) {
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <XCircle className="h-3 w-3" />
+          Sync Disabled
+        </Badge>
+      );
+    }
+
+    if (integration.syncFailureCount > 0) {
+      return (
+        <Badge variant="destructive" className="flex items-center gap-1">
+          <AlertTriangle className="h-3 w-3" />
+          Sync Issues ({integration.syncFailureCount} failures)
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge variant="default" className="flex items-center gap-1">
+        <CheckCircle2 className="h-3 w-3" />
+        Active
+      </Badge>
+    );
+  }, [integration?.syncEnabled, integration?.syncFailureCount]);
+
   if (isLoading) {
     return (
       <Card>
@@ -69,41 +106,6 @@ export function CalendarIntegrationSettings({
       </Card>
     );
   }
-
-  // Extract initials for avatar fallback
-  const getInitials = (email: string) => {
-    const parts = email.split('@')[0]?.split('.');
-    if (!parts || parts.length === 0) return email.substring(0, 2).toUpperCase();
-    if (parts.length === 1) return parts[0]!.substring(0, 2).toUpperCase();
-    return (parts[0]![0] + parts[1]![0]).toUpperCase();
-  };
-
-  const syncStatusBadge = () => {
-    if (!integration.syncEnabled) {
-      return (
-        <Badge variant="secondary" className="flex items-center gap-1">
-          <XCircle className="h-3 w-3" />
-          Sync Disabled
-        </Badge>
-      );
-    }
-
-    if (integration.syncFailureCount > 0) {
-      return (
-        <Badge variant="destructive" className="flex items-center gap-1">
-          <AlertTriangle className="h-3 w-3" />
-          Sync Issues ({integration.syncFailureCount} failures)
-        </Badge>
-      );
-    }
-
-    return (
-      <Badge variant="default" className="flex items-center gap-1">
-        <CheckCircle2 className="h-3 w-3" />
-        Active
-      </Badge>
-    );
-  };
 
   return (
     <Card>

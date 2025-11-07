@@ -1,5 +1,7 @@
 'use client';
 
+import { useCallback } from 'react';
+
 import { format } from 'date-fns';
 import { AlertTriangle, Calendar, CheckCircle2, Clock, Users, XCircle } from 'lucide-react';
 
@@ -103,7 +105,7 @@ export function SyncConflictModal({
   onResolve,
   isResolving = false,
 }: SyncConflictModalProps) {
-  const getSeverityBadge = (severity: ConflictDetails['severity']) => {
+  const getSeverityBadge = useCallback((severity: ConflictDetails['severity']) => {
     const variants = {
       LOW: { variant: 'secondary' as const, icon: CheckCircle2, label: 'Low' },
       MEDIUM: { variant: 'outline' as const, icon: Clock, label: 'Medium' },
@@ -120,25 +122,28 @@ export function SyncConflictModal({
         {config.label}
       </Badge>
     );
-  };
+  }, []);
 
-  const getConflictTypeLabel = (type: ConflictDetails['conflictType']) => {
+  const getConflictTypeLabel = useCallback((type: ConflictDetails['conflictType']) => {
     const labels = {
       EVENT_OVERLAPS_BOOKING: 'External Event Overlaps Booking',
       DOUBLE_BOOKING: 'Double Booking Detected',
       SLOT_STATE_MISMATCH: 'Slot Status Mismatch',
     };
     return labels[type];
-  };
+  }, []);
 
-  const handleResolve = async (
-    conflictId: string,
-    resolution: 'KEEP_BOOKING_REMOVE_EVENT' | 'KEEP_EVENT_CANCEL_BOOKING' | 'AUTO_RESOLVE'
-  ) => {
-    if (onResolve) {
-      await onResolve(conflictId, resolution);
-    }
-  };
+  const handleResolve = useCallback(
+    async (
+      conflictId: string,
+      resolution: 'KEEP_BOOKING_REMOVE_EVENT' | 'KEEP_EVENT_CANCEL_BOOKING' | 'AUTO_RESOLVE'
+    ) => {
+      if (onResolve) {
+        await onResolve(conflictId, resolution);
+      }
+    },
+    [onResolve]
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
