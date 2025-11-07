@@ -780,7 +780,6 @@ async function main() {
 
   console.log('🎉 PRODUCTION seed completed successfully!');
   console.log('📊 Summary:');
-  console.log('  - Admin user configured (info@medbookings.co.za)');
   console.log('  - 7 Provider Types created');
   console.log('  - 18 Services created');
   console.log('  - 22 Requirement Types created');

@@ -22,6 +22,8 @@
 import { PrismaClient } from '@prisma/client';
 import { addDays, addHours, subDays } from 'date-fns';
 
+import { hashPassword } from '../src/lib/password-hash';
+
 const prisma = new PrismaClient();
 
 // ============================================================================
@@ -98,6 +100,10 @@ async function main() {
   log('  Provider B (No Calendar): test-provider-no-calendar@medbookings.test');
   log('  Organization Owner: test-org-owner@medbookings.test');
   log('  Organization Staff: test-org-staff@medbookings.test');
+  log('');
+  log('🔑 Login Credentials (all accounts):');
+  log('  Password: TestPassword123!');
+  log('  Login at: http://localhost:3000/login');
 }
 
 // ============================================================================
@@ -248,10 +254,15 @@ async function cleanupTestData() {
 // ============================================================================
 
 async function createTestUsers() {
+  // Hash password once for all test users
+  const TEST_PASSWORD = 'TestPassword123!';
+  const hashedPassword = await hashPassword(TEST_PASSWORD);
+
   const providerUserA = await prisma.user.create({
     data: {
       name: 'Dr. Sarah Chen',
       email: 'test-provider-connected@medbookings.test',
+      password: hashedPassword,
       phone: '+27821234567',
       image: 'https://ui-avatars.com/api/?name=Sarah+Chen&background=0D8ABC&color=fff',
       role: 'USER', // Provider role determined by Provider record
@@ -262,6 +273,7 @@ async function createTestUsers() {
     data: {
       name: 'Dr. Michael Roberts',
       email: 'test-provider-no-calendar@medbookings.test',
+      password: hashedPassword,
       phone: '+27821234568',
       image: 'https://ui-avatars.com/api/?name=Michael+Roberts&background=7C3AED&color=fff',
       role: 'USER', // Provider role determined by Provider record
@@ -272,6 +284,7 @@ async function createTestUsers() {
     data: {
       name: 'Jane Anderson',
       email: 'test-org-owner@medbookings.test',
+      password: hashedPassword,
       phone: '+27821234569',
       image: 'https://ui-avatars.com/api/?name=Jane+Anderson&background=059669&color=fff',
       role: 'USER', // Organization role determined by OrganizationMembership
@@ -282,6 +295,7 @@ async function createTestUsers() {
     data: {
       name: 'Tom Wilson',
       email: 'test-org-staff@medbookings.test',
+      password: hashedPassword,
       phone: '+27821234570',
       image: 'https://ui-avatars.com/api/?name=Tom+Wilson&background=DC2626&color=fff',
       role: 'USER', // Organization role determined by OrganizationMembership

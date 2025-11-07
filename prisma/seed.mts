@@ -1106,7 +1106,6 @@ async function main() {
     console.log('Calculated availability slots created:', calculatedSlots.length);
 
     console.log('Development seed data created successfully:');
-    console.log('- Admin user configured (info@medbookings.co.za)');
     console.log(`- ${sampleUsers.length} sample users`);
     console.log(`- ${sampleProviders.length} sample providers`);
     console.log(`- ${sampleAvailabilities.length} sample availabilities`);
