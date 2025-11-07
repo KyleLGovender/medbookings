@@ -2,7 +2,14 @@
 
 ## Overview
 
-This guide provides comprehensive, real-world testing scenarios for the Google Calendar integration feature. Use this checklist to verify all aspects of the calendar sync functionality work correctly before deploying to production.
+This guide provides comprehensive **regression testing and technical validation** scenarios for the Google Calendar integration feature. Use this checklist for **pre-deployment verification**, **security validation**, and **edge case testing**.
+
+**Target Audience:** Experienced QA engineers, senior developers, DevOps
+
+**Testing Approach:** Seed data-based (reproducible state, fast setup)
+
+**For complete end-to-end testing with fresh accounts and step-by-step user journey, see:**
+📘 [`/docs/testing/REAL-WORLD-CALENDAR-TESTING-GUIDE.md`](/docs/testing/REAL-WORLD-CALENDAR-TESTING-GUIDE.md)
 
 **Testing Environment:**
 - Local development: `npm run dev`
