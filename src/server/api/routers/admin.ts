@@ -315,13 +315,24 @@ export const adminRouter = createTRPCRouter({
         (sub) => sub.requirementType.validationType === 'DOCUMENT' && sub.requirementType.isRequired
       );
 
-      const missingDocuments = documentRequirements.filter(
-        (sub) =>
-          !sub.documentMetadata ||
-          (typeof sub.documentMetadata === 'object' &&
-            sub.documentMetadata !== null &&
-            !('url' in (sub.documentMetadata as Record<string, unknown>)))
-      );
+      const missingDocuments = documentRequirements.filter((sub) => {
+        if (!sub.documentMetadata) return true;
+
+        const metadata = sub.documentMetadata as Record<string, unknown>;
+        if (typeof metadata !== 'object' || metadata === null) return true;
+
+        // Support both 'url' and 'value' keys
+        const urlValue =
+          (metadata.url as string | undefined) || (metadata.value as string | undefined);
+
+        // Validate URL format
+        return !(
+          urlValue &&
+          typeof urlValue === 'string' &&
+          urlValue.length > 0 &&
+          (urlValue.startsWith('http://') || urlValue.startsWith('https://'))
+        );
+      });
 
       if (missingDocuments.length > 0) {
         const missingNames = missingDocuments.map((sub) => sub.requirementType.name).join(', ');
@@ -628,6 +639,31 @@ export const adminRouter = createTRPCRouter({
           code: 'NOT_FOUND',
           message: 'Requirement submission not found',
         });
+      }
+
+      // Validate that DOCUMENT requirements have uploaded files
+      if (submission.requirementType.validationType === 'DOCUMENT') {
+        const metadata = submission.documentMetadata as Record<string, unknown> | null;
+
+        // Support both 'url' and 'value' keys for backwards compatibility
+        const urlValue =
+          metadata && typeof metadata === 'object'
+            ? (metadata.url as string | undefined) || (metadata.value as string | undefined)
+            : undefined;
+
+        // Validate URL format
+        const hasValidDocument =
+          urlValue &&
+          typeof urlValue === 'string' &&
+          urlValue.length > 0 &&
+          (urlValue.startsWith('http://') || urlValue.startsWith('https://'));
+
+        if (!hasValidDocument) {
+          throw new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message: `Cannot approve requirement "${submission.requirementType.name}": Valid document URL has not been uploaded yet. Please ensure the provider has uploaded the required document before approving.`,
+          });
+        }
       }
 
       // tx-safe: single write, admin requirement approval, idempotent

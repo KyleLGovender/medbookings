@@ -74,44 +74,8 @@ export const renderRequirementInput = (
     existingValue?: string | number | boolean | Date | File;
   }
 ) => {
-  // Set the requirement ID directly
-  form.setValue(
-    `regulatoryRequirements.requirements.${requirement.index}.requirementTypeId`,
-    requirement.id
-  );
-
-  // Initialize the field with existing value only if it doesn't already have a value
-  const currentValue = form.watch(
-    `regulatoryRequirements.requirements.${requirement.index}.value`
-  ) as string | number | boolean | Date | File | undefined;
-  const hasExistingSubmission: AdminRequirement | undefined = requirement.existingSubmission as
-    | AdminRequirement
-    | undefined;
-
-  if (!currentValue && hasExistingSubmission) {
-    const existingValue: string | number | boolean | Date | File | undefined =
-      (requirement.existingSubmission?.documentMetadata?.value as
-        | string
-        | number
-        | boolean
-        | Date
-        | File
-        | undefined) ||
-      (requirement.existingSubmission?.value as
-        | string
-        | number
-        | boolean
-        | Date
-        | File
-        | undefined);
-    if (existingValue !== undefined) {
-      form.setValue(
-        `regulatoryRequirements.requirements.${requirement.index}.value`,
-        existingValue,
-        { shouldValidate: false }
-      );
-    }
-  }
+  // NOTE: Do NOT call setValue during render - it causes infinite loops
+  // The parent component should handle initialization via useEffect
 
   const inputId = `requirement-${requirement.id}`;
 
@@ -209,8 +173,8 @@ export const renderRequirementInput = (
             acceptedFormats={acceptedFileTypes}
             purpose={(requirement.name as string | undefined) || `requirement-${requirement.index}`}
             onUpload={(fileUrl: string | null) => {
-              // Only trigger validation when needed
-              const shouldValidate: boolean = false;
+              // Trigger validation to update watchers and run validation useEffect
+              const shouldValidate: boolean = true;
 
               if (fileUrl) {
                 form.setValue(

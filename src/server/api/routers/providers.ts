@@ -555,6 +555,52 @@ export const providersRouter = createTRPCRouter({
         }
       }
 
+      // Validate that all required requirements are submitted with data
+      if (requirements.length > 0) {
+        const requiredRequirementTypes = await ctx.prisma.requirementType.findMany({
+          where: {
+            providerTypeId: { in: input.providerTypeIds },
+            isRequired: true,
+          },
+          take: 100, // Pagination: Requirement type validation (providers typically have <100 required types)
+          select: {
+            id: true,
+            name: true,
+            validationType: true,
+          },
+        });
+
+        const missingRequirements: string[] = [];
+
+        for (const reqType of requiredRequirementTypes) {
+          const submission = requirements.find((r) => r.requirementTypeId === reqType.id);
+
+          // Check if submission exists and has data
+          const hasData =
+            submission &&
+            ((submission.documentMetadata &&
+              Object.keys(submission.documentMetadata).length > 0 &&
+              ((submission.documentMetadata.url &&
+                typeof submission.documentMetadata.url === 'string') ||
+                (submission.documentMetadata.value &&
+                  typeof submission.documentMetadata.value === 'string'))) ||
+              (submission.value !== undefined &&
+                submission.value !== null &&
+                submission.value !== ''));
+
+          if (!hasData) {
+            missingRequirements.push(reqType.name);
+          }
+        }
+
+        if (missingRequirements.length > 0) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Missing required documents: ${missingRequirements.join(', ')}. Please upload all required documents before submitting your application.`,
+          });
+        }
+      }
+
       // Process requirements
       const requirementSubmissions: Array<{
         requirementTypeId: string;
@@ -938,6 +984,7 @@ export const providersRouter = createTRPCRouter({
           const slots = await tx.calculatedAvailabilitySlot.findMany({
             where: { serviceConfigId: { in: configIds } },
             select: { id: true },
+            take: 10000, // Pagination: Provider deletion - reasonable limit for slots per provider
           });
           slotIds = slots.map((slot) => slot.id);
         }
