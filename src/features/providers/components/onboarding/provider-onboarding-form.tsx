@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Send } from 'lucide-react';
-import { FormProvider, SubmitHandler, useForm } from 'react-hook-form';
+import { FormProvider, SubmitHandler, useForm, useWatch } from 'react-hook-form';
 
 import CalendarLoader from '@/components/calendar-loader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -37,6 +37,7 @@ type OnboardingData = RouterOutputs['providers']['getOnboardingData'];
 export function ProviderOnboardingForm() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [missingDocuments, setMissingDocuments] = useState<string[]>([]);
   const { toast } = useToast();
 
   // Fetch consolidated onboarding data
@@ -184,6 +185,14 @@ export function ProviderOnboardingForm() {
     setFormErrors(errors);
   }, [methods.formState.errors]);
 
+  // Watch requirements for validation (moved before useCallback to avoid stale closures)
+  // Use useWatch for deep nested object tracking instead of methods.watch()
+  const watchedRequirements = useWatch({
+    control: methods.control,
+    name: 'regulatoryRequirements.requirements',
+    defaultValue: [],
+  });
+
   // Update form state when provider types change
   useEffect(() => {
     if (selectedProviderTypeIds.length > 0 && onboardingData) {
@@ -230,6 +239,43 @@ export function ProviderOnboardingForm() {
       updateFormErrors();
     }
   }, [methods.formState.isSubmitted, methods.formState.errors, updateFormErrors]);
+
+  // Serialize requirements for deep comparison in dependency array
+  const serializedRequirements = JSON.stringify(watchedRequirements);
+
+  // Validate required documents when requirements change
+  useEffect(() => {
+    if (!onboardingData || uniqueRequirementsForSelectedTypes.length === 0) {
+      setMissingDocuments([]);
+      return;
+    }
+
+    const missing: string[] = [];
+    // Use getValues() to ensure we read the latest state (not cached watcher data)
+    const formRequirements = methods.getValues('regulatoryRequirements.requirements') || [];
+
+    // Check each required requirement
+    uniqueRequirementsForSelectedTypes.forEach((reqType) => {
+      if (reqType.isRequired && reqType.validationType === 'DOCUMENT') {
+        // Find the submission for this requirement
+        const submission = formRequirements.find((r) => r.requirementTypeId === reqType.id);
+
+        // Simplified validation: check value field directly (set by DocumentUploader)
+        const hasValidDocument =
+          submission?.value &&
+          typeof submission.value === 'string' &&
+          submission.value.trim().length > 0 &&
+          (submission.value.startsWith('http://') || submission.value.startsWith('https://'));
+
+        if (!hasValidDocument) {
+          missing.push(reqType.name);
+        }
+      }
+    });
+
+    setMissingDocuments(missing);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- serializedRequirements already tracks watchedRequirements deeply
+  }, [serializedRequirements, uniqueRequirementsForSelectedTypes, onboardingData, methods]);
 
   // tRPC mutation
   const mutation = useCreateProvider({
@@ -413,11 +459,28 @@ export function ProviderOnboardingForm() {
           )}
         />
 
+        {missingDocuments.length > 0 && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Missing Required Documents</AlertTitle>
+            <AlertDescription>
+              <p className="mb-2">
+                Please upload the following required documents before submitting:
+              </p>
+              <ul className="list-disc pl-5">
+                {missingDocuments.map((docName, index) => (
+                  <li key={index}>{docName}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex justify-end space-x-4">
           <Button type="reset" variant="outline" onClick={() => methods.reset()}>
             Reset
           </Button>
-          <Button type="submit" disabled={mutation.isPending}>
+          <Button type="submit" disabled={mutation.isPending || missingDocuments.length > 0}>
             {mutation.isPending ? 'Submitting...' : 'Submit Application'}{' '}
             <Send className="ml-2 h-4 w-4" />
           </Button>

@@ -68,5 +68,5 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  return Response.redirect(`${env.NEXTAUTH_URL}/profile/service-provider/view`);
+  return Response.redirect(`${env.NEXTAUTH_URL}/provider-profile`);
 }

@@ -61,7 +61,15 @@ const env = createEnv({
     console.error(error.errors.map((e) => `  - ${e.path.join('.')}: ${e.message}`).join('\n'));
     // eslint-disable-next-line no-console
     console.error('\n💡 Check your .env file and compare with .env.example\n');
-    process.exit(1);
+
+    // Only call process.exit in Node.js runtime (not available in Edge Runtime)
+    // eslint-disable-next-line n/no-process-env
+    if (typeof process !== 'undefined' && process.exit) {
+      process.exit(1);
+    } else {
+      // In Edge Runtime, throw an error instead (will be caught by Next.js)
+      throw new Error('Invalid environment variables - check console for details');
+    }
   },
 });
 

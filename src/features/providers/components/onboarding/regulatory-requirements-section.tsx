@@ -49,6 +49,7 @@ export function RegulatoryRequirementsSection({
   const {
     control,
     setValue,
+    getValues,
     watch,
     register,
     formState: { errors },
@@ -77,14 +78,33 @@ export function RegulatoryRequirementsSection({
     setTransformedRequirements(transformedReqs);
 
     // Set the requirements array with proper indexes in the form
-    setValue(
-      'regulatoryRequirements.requirements',
-      transformedReqs.map((req, idx) => ({
-        requirementTypeId: req.id as string,
-        index: idx,
-      })) as Array<{ requirementTypeId: string; index: number }>
-    );
-  }, [requirements, selectedProviderTypeId, setValue]);
+    // IMPORTANT: Preserve existing form data (uploaded documents) when updating requirements
+    const existingRequirements = getValues('regulatoryRequirements.requirements') || [];
+
+    if (existingRequirements.length === 0) {
+      // First initialization - create new array
+      setValue(
+        'regulatoryRequirements.requirements',
+        transformedReqs.map((req, idx) => ({
+          requirementTypeId: req.id as string,
+          index: idx,
+        })) as Array<{ requirementTypeId: string; index: number }>
+      );
+    } else {
+      // Merge: preserve existing data (uploaded documents, values, etc.)
+      const updatedRequirements = transformedReqs.map((req, idx) => {
+        // Find existing entry by ID to preserve uploaded data
+        const existing = existingRequirements.find(
+          (r: { requirementTypeId: string }) => r.requirementTypeId === req.id
+        );
+
+        // If exists, keep all existing data; otherwise create new entry
+        return existing || { requirementTypeId: req.id as string, index: idx };
+      });
+
+      setValue('regulatoryRequirements.requirements', updatedRequirements);
+    }
+  }, [requirements, selectedProviderTypeId, setValue, getValues]);
 
   const requiredRequirements = transformedRequirements.filter((req) => req.isRequired);
 

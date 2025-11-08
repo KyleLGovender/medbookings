@@ -4,9 +4,11 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 import { ProviderStatus, RequirementsValidationStatus } from '@prisma/client';
+import { AlertCircle } from 'lucide-react';
 
 import { RequirementSubmissionCard } from '@/components/requirement-submission-card';
 import { StatusBadge } from '@/components/status-badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -91,6 +93,8 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
         providerId,
         error: error instanceof Error ? error.message : String(error),
       });
+      // Rethrow so ApprovalButtons knows it failed
+      throw error;
     }
   };
 
@@ -230,6 +234,27 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
     requiredSubmissions.length > 0 &&
     approvedRequiredSubmissions.length === requiredSubmissions.length;
 
+  // Check for missing required documents
+  const missingRequiredDocuments = requiredSubmissions.filter((req: RequirementSubmission) => {
+    if (req.requirementType?.validationType !== 'DOCUMENT') return false;
+
+    const metadata = req.documentMetadata as Record<string, unknown> | null;
+    if (!metadata || typeof metadata !== 'object') return true;
+
+    // Support both 'url' and 'value' keys
+    const urlValue = (metadata.url as string | undefined) || (metadata.value as string | undefined);
+
+    // Check if valid URL exists
+    return !(
+      urlValue &&
+      typeof urlValue === 'string' &&
+      urlValue.length > 0 &&
+      (urlValue.startsWith('http://') || urlValue.startsWith('https://'))
+    );
+  });
+
+  const hasIncompleteDocuments = missingRequiredDocuments.length > 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -243,7 +268,8 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
             status={
               provider?.status === ProviderStatus.PENDING_APPROVAL
                 ? 'PENDING'
-                : provider?.status === ProviderStatus.TRIAL ||
+                : provider?.status === ProviderStatus.APPROVED ||
+                    provider?.status === ProviderStatus.TRIAL ||
                     provider?.status === ProviderStatus.TRIAL_EXPIRED ||
                     provider?.status === ProviderStatus.ACTIVE ||
                     provider?.status === ProviderStatus.PAYMENT_OVERDUE ||
@@ -277,6 +303,28 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
           )}
         </div>
       </div>
+
+      {/* Incomplete Application Warning */}
+      {hasIncompleteDocuments && provider?.status === ProviderStatus.PENDING_APPROVAL && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Incomplete Application</AlertTitle>
+          <AlertDescription>
+            <p className="mb-2">
+              This provider application is missing the following required documents:
+            </p>
+            <ul className="list-disc pl-5">
+              {missingRequiredDocuments.map((req) => (
+                <li key={req.id}>{req.requirementType?.name || 'Unknown Requirement'}</li>
+              ))}
+            </ul>
+            <p className="mt-3 text-sm">
+              Please contact the provider to upload the missing documents before approving this
+              application.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-6">
         {/* Provider Information */}
@@ -332,7 +380,8 @@ export function ProviderDetail({ providerId }: ProviderDetailProps) {
                     status={
                       provider?.status === ProviderStatus.PENDING_APPROVAL
                         ? 'PENDING'
-                        : provider?.status === ProviderStatus.TRIAL ||
+                        : provider?.status === ProviderStatus.APPROVED ||
+                            provider?.status === ProviderStatus.TRIAL ||
                             provider?.status === ProviderStatus.TRIAL_EXPIRED ||
                             provider?.status === ProviderStatus.ACTIVE ||
                             provider?.status === ProviderStatus.PAYMENT_OVERDUE ||

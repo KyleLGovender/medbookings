@@ -1,17 +1,19 @@
 /**
- * Sentry Client-Side Configuration
+ * Next.js Client-Side Instrumentation
  *
- * This file configures Sentry for browser/client-side error tracking.
- * Runs in the browser and tracks client-side errors, React errors, and user interactions.
+ * This file is automatically loaded by Next.js in the browser when instrumentationHook is enabled.
+ * It runs once when the client-side application loads.
  *
- * POPIA Compliance:
- * - No PHI is sent to Sentry (beforeSend hook scrubs sensitive data)
- * - Session replay is DISABLED (would capture screenshots with PHI)
- * - User context limited to sanitized IDs only
- * - No IP addresses or email addresses sent
+ * This file replaces the deprecated sentry.client.config.ts file.
+ * All Sentry client configuration is now in this file for Turbopack compatibility.
+ *
+ * Docs: https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client
  */
+
 import * as Sentry from '@sentry/nextjs';
 
+// Initialize Sentry for client-side
+// This content was previously in sentry.client.config.ts
 const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN;
 const SENTRY_ENVIRONMENT =
   process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development';
@@ -29,10 +31,6 @@ if (SENTRY_DSN) {
 
     // Setting this option to true will print useful information to the console while you're setting up Sentry.
     debug: process.env.SENTRY_DEBUG === 'true',
-
-    // Capture 100% of transactions for performance monitoring (disabled on free tier to conserve quota)
-    // replaysOnErrorSampleRate: 0.0,
-    // replaysSessionSampleRate: 0.0,
 
     // POPIA Compliance: Session replay is DISABLED
     // Session replay captures screenshots and could expose PHI
@@ -163,3 +161,13 @@ if (SENTRY_DSN) {
     denyUrls: [/extensions\//i, /^chrome:\/\//i, /^chrome-extension:\/\//i, /^moz-extension:\/\//i],
   });
 }
+
+// Capture router transitions for navigation tracking
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+
+// Export is required for Next.js to recognize this as an instrumentation file
+export const onRequestError = () => {
+  // This function is called when an unhandled error occurs
+  // Sentry will automatically capture it via the global error handler
+  // No additional logic needed here
+};
