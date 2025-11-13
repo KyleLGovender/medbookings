@@ -10,6 +10,14 @@
 # BYPASS: git commit --no-verify (use with caution!)
 # ============================================================================
 
+# ============================================================================
+# NVM INITIALIZATION (Required for git hooks)
+# ============================================================================
+# Git hooks run in a restricted environment without shell config
+# Load nvm explicitly to make node/npm/npx available
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+
 echo "🔍 Running CLAUDE.md compliance checks..."
 
 # =============================================================================
