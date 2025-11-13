@@ -1,8 +1,8 @@
 # MedBookings Codebase Context
 
-**Last Updated**: 2025-11-07
+**Last Updated**: 2025-11-13
 **Purpose**: Cached codebase knowledge for Claude Code (reduces analysis from ~72k to ~15k tokens)
-**Status**: ✅ Current (Sentry integration complete, production-ready)
+**Status**: ✅ Current (Calendar sync integration complete, production-ready)
 
 ---
 
@@ -218,16 +218,17 @@ AuditCategory: AUTHENTICATION | AUTHORIZATION | PHI_ACCESS | ADMIN_ACTION | DATA
 ### Router Structure (`src/server/api/root.ts`)
 ```typescript
 export const appRouter = createTRPCRouter({
-  admin: adminRouter,           // 1084 lines - provider/org approval, analytics
+  admin: adminRouter,           // 1120 lines - provider/org approval, analytics
   auth: authRouter,             //  383 lines - login, registration, verification
-  calendar: calendarRouter,     // 2555 lines - availability, bookings, slots
+  calendar: calendarRouter,     // 2703 lines - availability, bookings, slots
+  calendarSync: calendarSyncRouter,  // 1527 lines - Google Calendar bidirectional sync
   communications: communicationsRouter,  //   22 lines - email/SMS endpoints
   debug: debugRouter,           //   20 lines - development utilities
-  organizations: organizationsRouter,    // 1714 lines - org management, invitations
+  organizations: organizationsRouter,    // 1988 lines - org management, invitations
   profile: profileRouter,       //  195 lines - user profile CRUD
-  providers: providersRouter,   // 3132 lines - provider onboarding, services
+  providers: providersRouter,   // 3180 lines - provider onboarding, services
   settings: settingsRouter,     //  371 lines - user preferences
-  // billing: billingRouter,    // Commented out (Stripe integration incomplete)
+  // billing: billingRouter,    // 253 lines - Stripe integration (commented out, incomplete)
 });
 ```
 
@@ -315,10 +316,11 @@ calendar/
 ```
 
 ### Key Features by Size
-1. **Providers** (3132 LOC router) - Onboarding, service config, regulatory requirements
-2. **Calendar** (2555 LOC router) - Core booking flow, availability, slot generation
-3. **Organizations** (1714 LOC router) - Multi-location management, provider networks
-4. **Admin** (1084 LOC router) - Approval workflows, analytics, system management
+1. **Providers** (3180 LOC router) - Onboarding, service config, regulatory requirements
+2. **Calendar** (2703 LOC router) - Core booking flow, availability, slot generation
+3. **Organizations** (1988 LOC router) - Multi-location management, provider networks
+4. **Calendar Sync** (1527 LOC router) - Google Calendar bidirectional sync, conflict resolution
+5. **Admin** (1120 LOC router) - Approval workflows, analytics, system management
 
 ---
 
@@ -575,13 +577,15 @@ Component Props (type-safe all the way)
 ### Google Services
 
 **Google Calendar**:
-- OAuth Flow: `/src/app/api/auth/google/calendar/route.ts`
-- Callback: `/src/app/api/auth/google/calendar/callback/route.ts`
+- OAuth Flow: `/src/app/api/auth/google/calendar/route.ts` (Provider), `/src/app/api/auth/google/organization-calendar/route.ts` (Organization)
+- Callback: `/src/app/api/auth/google/calendar/callback/route.ts` (Provider), `/src/app/api/auth/google/organization-calendar/callback/route.ts` (Organization)
 - Integration Storage: `CalendarIntegration` model (access_token, refresh_token)
-- Sync Operations: `CalendarSyncOperation` model (tracks sync jobs)
+- Sync Operations: `CalendarSyncOperation` model (tracks sync jobs, status, conflicts)
 - Event Storage: `CalendarEvent` model (external events block slots)
 - Sync Direction: IMPORT_ONLY | EXPORT_ONLY | BIDIRECTIONAL
 - Sync Types: FULL_SYNC | INCREMENTAL_SYNC | WEBHOOK_SYNC | MANUAL_SYNC
+- Router: `calendarSync` router (1527 lines) - handles sync operations, conflict resolution
+- Cron Job: Background sync every 15 minutes (configurable via SYNC_INTERVAL_MINUTES)
 
 **Google Meet**:
 - Settings: `/src/app/api/auth/google/meet-settings/route.ts`
@@ -795,6 +799,9 @@ GOOGLE_CLIENT_SECRET="..."
 UPSTASH_REDIS_REST_URL="..."
 UPSTASH_REDIS_REST_TOKEN="..."
 
+# Calendar Sync (CRITICAL for background sync)
+CRON_SECRET="<generate with: openssl rand -hex 32>"
+
 # Email
 SENDGRID_API_KEY="..."
 SENDGRID_FROM_EMAIL="noreply@medbookings.co.za"
@@ -823,14 +830,39 @@ DEBUG_FORMS=true         # Form validation
 DEBUG_CALENDAR=true      # Calendar operations
 DEBUG_BOOKINGS=true      # Booking flow
 
+# Calendar Sync Configuration
+SYNC_INTERVAL_MINUTES=15    # How often to sync calendars (default: 15)
+MAX_SYNC_RETRIES=5          # Max retries before disabling sync (default: 5)
+SYNC_BATCH_SIZE=50          # Max integrations per cron run (default: 50)
+
 # Sentry (production settings)
 SENTRY_ORG="..."
 SENTRY_PROJECT="..."
+NEXT_PUBLIC_SENTRY_ENVIRONMENT=production  # production | staging | development
+SENTRY_DEBUG=false                         # Enable Sentry SDK debug logs
 ```
 
 ---
 
 ## 14. Recent Changes Log
+
+### 2025-11-13 (Codebase Context Refresh)
+- **Actions**: Comprehensive codebase analysis and context update
+- **Changes**:
+  - Added `calendarSync` router (1527 lines) - Google Calendar bidirectional sync
+  - Updated router line counts: calendar (2703), providers (3180), organizations (1988), admin (1120)
+  - New environment variables: CRON_SECRET, SYNC_INTERVAL_MINUTES, MAX_SYNC_RETRIES, SYNC_BATCH_SIZE
+  - Documentation expanded to 26 markdown files
+  - New testing guides: Calendar sync browser testing, overview, and real-world testing
+  - New setup guide: Google Cloud OAuth setup
+- **Status**: ✅ Complete - Context fully refreshed and synchronized
+- **Recent Commits (since 2025-11-07)**:
+  - Fixed Vercel build warnings (Sentry instrumentation & Edge Runtime)
+  - Resolved compliance violations and calendar callback redirect
+  - Added performance optimizations
+  - Resolved type safety violations
+  - Documentation cleanup (removed archived docs)
+  - Enhanced calendar sync testing documentation
 
 ### 2025-11-07 (Calendar Sync UI Integration)
 - **Actions**: Integrated calendar sync dashboards into provider and organization profile pages
@@ -1007,19 +1039,51 @@ SENTRY_PROJECT="..."
 3. Run `npx prisma generate`
 4. Check `.eslintrc.js` overrides for acceptable `any` usage
 
+**Work with calendar sync?**
+1. Router: `src/server/api/routers/calendar-sync.ts`
+2. Procedures: `syncGoogleCalendar`, `getSyncStatus`, `getConflicts`, `resolveConflict`
+3. Integration: `CalendarIntegration` model stores access/refresh tokens
+4. Sync operations: `CalendarSyncOperation` model tracks jobs
+5. Conflicts: Check `CalendarEvent` for blocking events
+6. Testing guides: `/docs/testing/CALENDAR-SYNC-*.md`
+
 ---
 
 ## 18. Contact & Resources
 
-### Documentation
+### Documentation (26 Files)
 - **Full Specs**: `/docs/INDEX.md` - Complete documentation index
 - **CLAUDE.md**: `/CLAUDE.md` - Comprehensive development guidelines
-- **Type Safety**: `/docs/compliance/TYPE-SAFETY.md`
-- **Database Ops**: `/docs/core/DATABASE-OPERATIONS.md`
-- **Timezone Guide**: `/docs/compliance/TIMEZONE-GUIDELINES.md`
-- **Logging Guide**: `/docs/compliance/LOGGING.md`
-- **Compliance System**: `/docs/compliance/COMPLIANCE-SYSTEM.md`
-- **Enforcement Coverage**: `/docs/compliance/ENFORCEMENT-COVERAGE.md`
+- **Core Guides**:
+  - `/docs/core/CLAUDE-AGENT-CONTEXT.md` - This file (cached context)
+  - `/docs/core/DATABASE-OPERATIONS.md` - Database patterns and best practices
+- **Compliance**:
+  - `/docs/compliance/TYPE-SAFETY.md`
+  - `/docs/compliance/TIMEZONE-GUIDELINES.md`
+  - `/docs/compliance/LOGGING.md`
+  - `/docs/compliance/COMPLIANCE-SYSTEM.md`
+  - `/docs/compliance/ENFORCEMENT-COVERAGE.md`
+  - `/docs/compliance/BUG-DETECTION.md`
+  - `/docs/compliance/CLAUDE-MD-AUTO-SYNC.md`
+  - `/docs/compliance/CONTEXT-LOADING.md`
+  - `/docs/compliance/DEVELOPMENT-WORKFLOW.md`
+  - `/docs/compliance/VERIFICATION-PROTOCOLS.md`
+- **Setup & Deployment**:
+  - `/docs/setup/ENVIRONMENT-SETUP.md`
+  - `/docs/setup/ENVIRONMENT-VARIABLES.md`
+  - `/docs/setup/GOOGLE-CLOUD-OAUTH-SETUP.md`
+  - `/docs/deployment/SECURITY-CHECKLIST.md`
+  - `/docs/deployment/VERCEL-DEPLOYMENT.md`
+  - `/docs/deployment/UPSTASH-REDIS-SETUP.md`
+  - `/docs/deployment/CREDENTIAL-ROTATION.md`
+- **Testing**:
+  - `/docs/testing/CALENDAR-SYNC-TESTING-OVERVIEW.md`
+  - `/docs/testing/CALENDAR-SYNC-BROWSER-TESTING-GUIDE.md`
+  - `/docs/testing/REAL-WORLD-CALENDAR-TESTING-GUIDE.md`
+- **Guides**:
+  - `/docs/guides/DEVELOPER-PRINCIPLES.md`
+  - `/docs/guides/ACTIONABLE-WARNINGS-IMPLEMENTATION.md`
+  - `/docs/guides/DOCS-VALIDATION-GUIDE.md`
 
 ### External Resources
 - Next.js Docs: https://nextjs.org/docs
